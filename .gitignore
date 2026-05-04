@@ -14,3 +14,7 @@ frontend/.angular/
 # Pacote de instalacao — JAR gerado pelo deploy/build-pacote.*
 deploy/instalar/app/*.jar
 deploy/instalar-8081/app/*.jar
+
+# Instaladores binários grandes (>100MB — excede limite do GitHub)
+deploy/instalar/*.exe
+deploy/instalar-8081/*.exe
