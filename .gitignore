@@ -18,3 +18,10 @@ deploy/instalar-8081/app/*.jar
 # Instaladores binários grandes (>100MB — excede limite do GitHub)
 deploy/instalar/*.exe
 deploy/instalar-8081/*.exe
+
+# Credenciais e secrets — NUNCA versionar
+**/google-service-account.json
+**/*service-account*.json
+**/credentials.json
+**/*.pem
+**/*.p12
