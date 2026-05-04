@@ -1,0 +1,368 @@
+<div class="page comanda-page">
+  @if (caixaStatusLoading) {
+    <div class="comanda-caixa-loading">
+      <div class="spinner"></div>
+      <p>Verificando caixa...</p>
+    </div>
+  } @else if (caixaNeedsAbertura && !showFormAbertura) {
+    <div class="caixa-fechado-panel">
+      <h2 class="caixa-fechado-title">Caixa fechado</h2>
+      <p class="caixa-fechado-desc">Para lançar comandas, é necessário abrir ou reabrir o caixa informando o valor em caixa.</p>
+      <div class="caixa-fechado-buttons">
+        <button type="button" class="btn btn-outline btn-caixa-voltar" (click)="voltarParaInicio()">Voltar ao início</button>
+        <button type="button" class="btn btn-primary btn-caixa-abrir" (click)="showFormAbertura = true">
+          {{ caixaFechadoHoje ? 'Reabrir caixa' : 'Abrir caixa' }}
+        </button>
+      </div>
+    </div>
+  } @else if (caixaNeedsAbertura && showFormAbertura) {
+    <div class="caixa-abertura-panel">
+      <h2 class="caixa-fechado-title">{{ caixaFechadoHoje ? 'Reabertura de caixa' : 'Abertura de caixa' }}</h2>
+      <p class="caixa-fechado-desc">{{ caixaFechadoHoje ? 'O caixa já foi fechado hoje. Informe o valor em caixa para reabrir.' : 'Primeiro acesso do dia. Informe o valor em caixa para iniciar.' }}</p>
+      <form (ngSubmit)="abrirCaixaComanda()" class="caixa-abertura-form-inline">
+        <label for="valorAberturaComanda">Valor em caixa (R$)</label>
+        <input
+          id="valorAberturaComanda"
+          type="number"
+          step="0.01"
+          min="0"
+          [(ngModel)]="valorAbertura"
+          name="valorAbertura"
+          class="input input-valor-abertura"
+          placeholder="0,00"
+        />
+        @if (caixaAberturaError) {
+          <p class="message error">{{ caixaAberturaError }}</p>
+        }
+        <div class="caixa-abertura-form-buttons">
+          <button type="button" class="btn btn-outline" (click)="showFormAbertura = false">Voltar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="caixaAberturaLoading">
+            {{ caixaAberturaLoading ? (caixaFechadoHoje ? 'Reabrindo...' : 'Abrindo...') : (caixaFechadoHoje ? 'Reabrir caixa' : 'Abrir caixa') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  } @else {
+  <div class="layout-two-cols">
+    <div class="col-form">
+      <header class="form-header">
+        @if (temComandaAberta()) {
+          <h1 class="page-title">Adicionar à comanda</h1>
+          <p class="page-subtitle">{{ labelTipo(tipo) }} <strong>{{ identificador || '—' }}</strong>. Informe peso e preço para lançar mais um item.</p>
+        } @else {
+          <h1 class="page-title">Nova comanda</h1>
+          <p class="page-subtitle">Informe o tipo (cliente, mesa ou comanda), o identificador, o peso e o preço por kilo. O total é calculado na hora.</p>
+        }
+        <p class="atalhos-resumo" title="Atalhos de teclado disponíveis nesta tela">
+          <span class="atalhos-icon" aria-hidden="true">⌨</span>
+          <span>Lançar: <kbd>Ctrl</kbd>+<kbd>Enter</kbd> · Fechar comanda: <kbd>Alt</kbd>+<kbd>F</kbd> · No modal: <kbd>1</kbd>–<kbd>4</kbd> forma, <kbd>Enter</kbd> confirmar, <kbd>Esc</kbd> cancelar</span>
+        </p>
+      </header>
+
+      <div class="card form-card">
+        <form (ngSubmit)="lancar()" class="comanda-form">
+          <div class="form-group">
+            <label for="tipo">Tipo</label>
+            <select id="tipo" name="tipo" [(ngModel)]="tipo" (ngModelChange)="onTipoChange($event)" class="input" [disabled]="salvandoCabecalho()">
+              @for (t of tipos; track t.value) {
+                <option [value]="t.value">{{ t.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="identificador">Identificador <span class="obrigatorio">(obrigatório)</span></label>
+            <input
+              #identificadorInput
+              id="identificador"
+              name="identificador"
+              type="text"
+              [(ngModel)]="identificador"
+              [placeholder]="placeholderIdentificador"
+              class="input"
+              autocomplete="off"
+              (blur)="onIdentificadorBlur()"
+              required
+            />
+            @if (comandaAtual()?.id) {
+              <span class="field-hint field-hint--muted">Ao voltar para <strong>Comanda</strong>, o sistema reutiliza o <strong>mesmo número</strong> desta comanda aberta (sem pular a sequência). Só pede um número novo se esta comanda nunca foi comanda numerada. O próximo número global é calculado pelo maior já usado no cadastro.</span>
+            } @else if (tipo === 'COMANDA') {
+              <span class="field-hint">Preenchido automaticamente para comanda.</span>
+            } @else {
+              <span class="field-hint">Informe o número da mesa ou o nome do cliente.</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="tipoProduto">Tipo de produto</label>
+            <select id="tipoProduto" name="tipoProduto" [(ngModel)]="tipoProduto" (ngModelChange)="onTipoProdutoChange()" class="input">
+              @for (tp of tiposProduto; track tp.value) {
+                <option [value]="tp.value">{{ tp.label }}</option>
+              }
+            </select>
+          </div>
+
+          @if (tipoProduto === 'POR_PESO') {
+          <div class="balanca-comanda-row">
+            @if (balancaStatus() === 'conectada' && balancaModo() === 'serial') {
+              <span class="balanca-badge">Balança conectada</span>
+              <button type="button" class="btn btn-outline btn-sm" (click)="desconectarBalancaNaComanda()">Desconectar</button>
+            } @else if (balancaService.serialDisponivel) {
+              <span class="balanca-hint-comanda">Balança desconectada. Reconecte após reiniciar o computador.</span>
+              <button type="button" class="btn btn-primary btn-sm" (click)="conectarBalancaNaComanda()" [disabled]="balancaConectando()">
+                {{ balancaConectando() ? 'Conectando...' : 'Conectar balança' }}
+              </button>
+            } @else {
+              <p class="balanca-hint-comanda">Conecte a balança em <strong>Gestão → Configuração</strong> para o peso ser preenchido automaticamente.</p>
+            }
+          </div>
+          @if (balancaErro()) {
+            <p class="message error balanca-err">{{ balancaErro() }}</p>
+          }
+          <p class="balanca-hint-comanda" style="margin-top: 0.5rem;">
+            @if (balancaStatus() === 'conectada' && balancaModo() === 'serial') {
+              O peso é preenchido automaticamente ao colocar na balança.
+            } @else {
+              Configuração completa em <strong>Gestão → Configuração</strong>.
+            }
+          </p>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="peso">Peso (kg)</label>
+              <input
+                #pesoInput
+                id="peso"
+                name="pesoKg"
+                type="number"
+                step="0.001"
+                min="0"
+                [(ngModel)]="pesoKg"
+                placeholder="0,000"
+                class="input"
+                (focus)="selecionarSeZero($event)"
+              />
+            </div>
+            <div class="form-group">
+              <label for="preco">Preço por kilo (R$)</label>
+              <input
+                id="preco"
+                name="precoPorKilo"
+                type="number"
+                step="0.01"
+                min="0"
+                [(ngModel)]="precoPorKilo"
+                placeholder="0,00"
+                class="input input-readonly"
+                readonly
+                title="Preço configurado em Gestão → Configuração"
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="valorCobrar">Valor a cobrar (R$)</label>
+            <input
+              id="valorCobrar"
+              name="valorPorPeso"
+              type="number"
+              step="0.01"
+              min="0"
+              [(ngModel)]="valorPorPeso"
+              placeholder="0 = usar peso × preço/kg"
+              class="input"
+              title="Opcional: preencha para aplicar desconto (ex.: cliente conhecido)"
+            />
+            <span class="field-hint">Opcional: preencha para aplicar desconto. Deixe 0 para usar peso × preço/kg.</span>
+          </div>
+          } @else {
+          <div class="form-row">
+            <div class="form-group">
+              <label for="qtdFixo">Quantidade</label>
+              <input
+                id="qtdFixo"
+                name="quantidadePrecoFixo"
+                type="number"
+                min="1"
+                [(ngModel)]="quantidadePrecoFixo"
+                placeholder="1"
+                class="input"
+              />
+            </div>
+            <div class="form-group">
+              <label for="precoFixo">Preço (R$)</label>
+              <input
+                #precoFixoInput
+                id="precoFixo"
+                name="valorUnitarioPrecoFixo"
+                type="number"
+                step="0.01"
+                min="0"
+                [(ngModel)]="valorUnitarioPrecoFixo"
+                placeholder="0,00"
+                class="input"
+                (focus)="selecionarSeZero($event)"
+              />
+            </div>
+          </div>
+          }
+
+          <div class="total-box">
+            <span class="total-label">Valor deste lançamento</span>
+            <span class="total-value">R$ {{ valorTotal | number : '1.2-2' }}</span>
+          </div>
+
+          @if (error()) {
+            <div class="message error">{{ error() }}</div>
+          }
+          @if (success()) {
+            <div class="message success">{{ success() }}</div>
+          }
+
+          <button type="submit" class="btn btn-primary btn-with-shortcut" [disabled]="loading() || salvandoCabecalho()" title="Atalho: Ctrl+Enter">
+            {{ loading() ? 'Lançando...' : 'Lançar' }}
+            <span class="shortcut-badge" title="Atalho de teclado: Ctrl+Enter">Ctrl+↵</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <aside class="col-hero" aria-hidden="true">
+      @if (temComandaAberta()) {
+        <div class="painel-comanda">
+          <div class="painel-header">
+            <span class="painel-titulo">{{ labelTipo(tipo) }} {{ identificador || '—' }}</span>
+            <span class="painel-status">Em aberto</span>
+          </div>
+          <p class="painel-usuario">Aberta por: <strong>{{ comandaAtual()?.openedByUsername || '—' }}</strong></p>
+          <div class="painel-lista">
+            <table class="tabela-itens">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Peso/Quantidade</th>
+                  <th>Preço</th>
+                  <th class="th-total">Total</th>
+                  <th class="th-acoes">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of itensAtuais(); track $index) {
+                  <tr>
+                    <td>{{ $index + 1 }}</td>
+                    <td>@if (item.tipoProduto === 'PRECO_FIXO') { {{ item.quantidade ?? 1 }} un } @else { {{ item.pesoKg | number : '1.3-3' }} kg }</td>
+                    <td>R$ {{ item.precoPorKilo | number : '1.2-2' }}</td>
+                    <td class="td-total">R$ {{ item.valorTotal | number : '1.2-2' }}</td>
+                    <td class="td-acoes">
+                      <button type="button" class="btn-item btn-editar" (click)="editarItem($index, item)" title="Editar">Editar</button>
+                      <button type="button" class="btn-item btn-cancelar" (click)="cancelarItem($index, item)" title="Cancelar item">Cancelar</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="painel-total-geral">
+            <span>Total da comanda</span>
+            <span class="valor-total">R$ {{ totalComandaAtual | number : '1.2-2' }}</span>
+          </div>
+          <div class="painel-acoes">
+            <button type="button" class="btn btn-fechar btn-with-shortcut" (click)="abrirModalFechar()" title="Atalho: Alt+F. No modal: 1–4 forma, Enter confirmar, Esc cancelar">
+              Fechar comanda <span class="shortcut-badge shortcut-sm" title="Pressione Alt+F">Alt+F</span>
+            </button>
+            <button type="button" class="btn btn-nova" (click)="novaComanda()">
+              Nova comanda
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="hero-content">
+          <img src="logo.png" alt="Mix Açaí" class="hero-logo" />
+          <div class="hero-illustration">
+            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs>
+                <linearGradient id="comandaBowl" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#f5e6fa"/>
+                  <stop offset="100%" stop-color="#e1bee7"/>
+                </linearGradient>
+                <linearGradient id="comandaAcai" x1="0%" y1="100%" x2="0%" y2="0%">
+                  <stop offset="0%" stop-color="#2d1b2e"/>
+                  <stop offset="40%" stop-color="#4a2c4d"/>
+                  <stop offset="100%" stop-color="#6b3d6f"/>
+                </linearGradient>
+              </defs>
+              <ellipse cx="100" cy="132" rx="72" ry="20" fill="url(#comandaBowl)" opacity="0.95"/>
+              <path d="M 38 132 C 38 55 100 42 100 42 C 100 42 162 55 162 132 Z" fill="url(#comandaBowl)"/>
+              <ellipse cx="100" cy="48" rx="60" ry="14" fill="#ce93d8" opacity="0.9"/>
+              <circle cx="100" cy="82" r="44" fill="url(#comandaAcai)"/>
+              <circle cx="82" cy="72" r="9" fill="#1a0f1b" opacity="0.5"/>
+              <circle cx="108" cy="78" r="7" fill="#1a0f1b" opacity="0.4"/>
+              <circle cx="92" cy="92" r="8" fill="#1a0f1b" opacity="0.45"/>
+            </svg>
+          </div>
+          <p class="hero-tagline">Peso certo, preço certo.</p>
+          <p class="hero-desc">Abra uma comanda, lance os itens. Depois feche ou deixe em aberto e use «Nova comanda» para o próximo cliente.</p>
+        </div>
+      }
+    </aside>
+  </div>
+
+  @if (showModalFechar()) {
+    <div class="modal-overlay" (click)="cancelarFechar()">
+      <div class="modal modal-fechar" (click)="$event.stopPropagation()">
+        <h3>Fechar comanda</h3>
+        <p>Total: R$ {{ totalComandaAtual | number : '1.2-2' }}</p>
+        <div class="form-group form-group-forma">
+          <label for="forma">Forma de pagamento</label>
+          <span class="shortcut-hint" title="Atalhos: 1=PIX, 2=Dinheiro, 3=Cartão crédito, 4=Cartão débito" aria-label="Atalhos de teclado">⌨</span>
+          <select id="forma" [(ngModel)]="formaPagamentoSelecionada" (ngModelChange)="onFormaPagamentoChange()" class="input">
+            @for (f of formasPagamento; track f.value) {
+              <option [value]="f.value">{{ f.label }}</option>
+            }
+          </select>
+          <div class="forma-atalhos">
+            @for (f of formasPagamento; track f.value; let i = $index) {
+              <span class="forma-atalho" [class.active]="formaPagamentoSelecionada === f.value" title="Tecla {{ i + 1 }}">{{ i + 1 }} {{ f.label }}</span>
+            }
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline btn-with-shortcut" (click)="cancelarFechar()" title="Atalho: Esc">
+            Cancelar <span class="shortcut-badge shortcut-sm" title="Pressione Esc">Esc</span>
+          </button>
+          <button type="button" class="btn btn-primary btn-with-shortcut" (click)="confirmarFechar()" [disabled]="fechando()" title="Atalho: Enter">
+            {{ fechando() ? 'Fechando...' : 'Confirmar' }} <span class="shortcut-badge shortcut-sm" title="Pressione Enter">↵</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+  @if (showModalItemEmEdicao()) {
+    <div class="modal-overlay" (click)="fecharModalItemEmEdicao()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h3>Item em edição</h3>
+        <p>Já existe um item em edição. Conclua o lançamento primeiro (edite os valores e clique em <strong>Lançar</strong>) e depois edite o outro item.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary" (click)="fecharModalItemEmEdicao()">OK</button>
+        </div>
+      </div>
+    </div>
+  }
+  @if (showModalCancelarItem() && itemParaCancelar(); as pending) {
+    <div class="modal-overlay" (click)="fecharModalCancelarItem()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <h3>Cancelar item</h3>
+        <p>
+          @if (pending.item.tipoProduto === 'PRECO_FIXO') {
+            Cancelar este item? ({{ pending.item.quantidade ?? 1 }} un × R$ {{ pending.item.precoPorKilo | number : '1.2-2' }} = R$ {{ pending.item.valorTotal | number : '1.2-2' }})
+          } @else {
+            Cancelar este item? ({{ pending.item.pesoKg | number : '1.3-3' }} kg, R$ {{ pending.item.valorTotal | number : '1.2-2' }})
+          }
+        </p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" (click)="fecharModalCancelarItem()">Não</button>
+          <button type="button" class="btn btn-primary" (click)="confirmarCancelarItem()">Sim, cancelar</button>
+        </div>
+      </div>
+    </div>
+  }
+  }
+</div>

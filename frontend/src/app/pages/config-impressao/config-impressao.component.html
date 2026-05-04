@@ -1,0 +1,57 @@
+<h1 class="page-title">Impressora térmica</h1>
+<p class="subtle">
+  Com o nome configurado, o <strong>servidor envia o texto direto para a impressora</strong> instalada neste mesmo PC (Windows:
+  spooler com o mesmo nome do Painel de Impressoras; Mac/Linux: CUPS / <code>lp</code>). Se ficar em branco, use impressão pelo
+  navegador. Campo vazio = só navegador.
+</p>
+
+@if (carregando) {
+  <p class="subtle">Carregando…</p>
+} @else {
+  @if (erro) {
+    <p class="err">{{ erro }}</p>
+  }
+
+  <div class="panel">
+    <h2>Impressora no sistema</h2>
+    <p class="hint">
+      <strong>Windows:</strong> no PowerShell execute <code>Get-Printer | Select-Object Name</code> ou em Prompt:
+      <code>wmic printer get name</code>. Em Configurações → Impressoras o nome costuma ser o mesmo da fila.
+      <strong>Mac/Linux:</strong> Terminal <code>lpstat -p</code>.
+    </p>
+    @if (filas.length === 0) {
+      <p class="hint">
+        Nenhuma impressora listada aqui — confira driver/USB no Windows ou <code>lpstat</code> no Mac. Mesmo assim você pode digitar o
+        nome exato (como em Configurações → Impressoras).
+      </p>
+    } @else {
+      <ul class="fila-lista">
+        @for (f of filas; track f) {
+          <li>
+            <button type="button" class="btn btn-ghost sm" (click)="usarFila(f)">{{ f }}</button>
+          </li>
+        }
+      </ul>
+    }
+    <div class="field">
+      <label for="nf">Nome da fila salva no sistema</label>
+      <input
+        id="nf"
+        name="nf"
+        type="text"
+        [(ngModel)]="nomeImpressoraLp"
+        list="filas-dl"
+        placeholder="Ex.: Bematech MP-4200 HS"
+        autocomplete="off"
+      />
+      <datalist id="filas-dl">
+        @for (f of filas; track f) {
+          <option [value]="f"></option>
+        }
+      </datalist>
+    </div>
+    <button type="button" class="btn btn-primary" [disabled]="salvando" (click)="salvar()">
+      {{ salvando ? 'Salvando…' : 'Salvar' }}
+    </button>
+  </div>
+}

@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: espetinho-jurema-api
+  datasource:
+    url: jdbc:h2:file:${H2_FILE_PATH:./data/espetinho};DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 32
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: 9090
+  servlet:
+    context-path: /
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:ESPadrao-ChaveSeguraParaJwt-MinimoTrintaEDoisBytes-OK}
+    expiration-minutes: 480
+  backup:
+    enabled: true
+    directory: ${H2_BACKUP_DIR:./data/backups}
+    cron: "0 0 3 * * *"
+    retention-days: 14
+  mesas:
+    quantidade-inicial: 40
+  cors:
+    # "*" aceita qualquer Origin (login no celular com http://IP:4200 sem variável de ambiente).
+    # Para API exposta na internet, restrinja origens e remova o *.
+    allowed-origins: "http://localhost:4200,http://127.0.0.1:4200,http://localhost,http://127.0.0.1,*${APP_CORS_EXTRA_ORIGINS:}"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    br.com.espetinhojurema: INFO

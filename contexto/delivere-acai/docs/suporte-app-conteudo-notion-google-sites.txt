@@ -1,0 +1,78 @@
+================================================================================
+PÁGINA DE SUPORTE — Mix Açaí Gestão (App Store)
+Copie as seções abaixo para o Notion ou Google Sites. Troque o e-mail e URLs.
+================================================================================
+
+TÍTULO DA PÁGINA (H1)
+---------------------
+Suporte — Mix Açaí Gestão
+
+
+SUBTÍTULO
+---------
+Central de ajuda do aplicativo para gestão de vendas e entregas das lojas Mix Açaí.
+
+
+COMO USAR O APP
+---------------
+
+1) Primeiro acesso e login
+   • Abra o app e informe o usuário e a senha fornecidos pela sua gestão.
+   • O app precisa de conexão com a internet para carregar dados das lojas.
+
+
+2) Dashboard
+   • Toque em "Hoje" para ver apenas o dia atual ou escolha as datas "De" e "Até" para um período.
+   • Use o filtro "Tipo de produto" (Todos, Por peso ou Preço fixo) conforme a análise desejada.
+   • O card roxo mostra o total geral; o gráfico mostra a participação por loja.
+   • Role a tela para ver o detalhe de cada loja e as formas de pagamento.
+
+
+3) Consulta
+   • Selecione a loja (busque pelo nome ou código, se houver várias).
+   • Escolha o tipo de produto e o período (datas "De" e "Até").
+   • O resumo exibe o total do dia/período e o valor por PIX, cartão, dinheiro etc.
+   • Use "Ver detalhes das vendas" quando disponível para abrir o detalhamento do dia.
+
+
+4) Entregas
+   • Toque para importar a planilha de pedidos do iFood (.xlsx).
+   • Importe também a planilha de entregas do motorista (.xlsx).
+   • Toque em "Comparar" para cruzar os dados e conferir valores a pagar.
+   • Em caso de erro no arquivo, verifique se as planilhas estão no formato esperado pela operação.
+
+
+5) Navegação
+   • Use a barra inferior para alternar entre Dashboard, Consulta e Entregas.
+
+
+PERGUNTAS FREQUENTES
+--------------------
+
+P: Os valores não aparecem ou estão zerados.
+R: Verifique a internet, o período selecionado (datas não podem ser futuras) e se a loja correta está selecionada na Consulta. Na Dashboard, confira se o intervalo de datas inclui dias com vendas sincronizadas.
+
+P: Não consigo importar a planilha nas Entregas.
+R: Confirme que o arquivo é .xlsx e que não está corrompido. Tente exportar novamente do iFood ou do sistema do motorista.
+
+P: Esqueci minha senha.
+R: Entre em contato com o suporte pelo e-mail abaixo; a redefinição é feita pela equipe de gestão.
+
+
+CONTATO / SUPORTE
+-----------------
+Dúvidas, problemas de acesso ou sugestões:
+
+E-mail: SUBSTITUA_PELO_SEU_EMAIL@dominio.com.br
+
+(Substitua pela caixa postal que você vai monitorar. Resposta em horário comercial, se quiser acrescente: "Respondemos em até X dias úteis.")
+
+
+RODAPÉ (opcional)
+-----------------
+Mix Açaí Gestão — aplicativo para lojistas e gestores.
+Última atualização desta página: SUBSTITUA_PELA_DATA
+
+================================================================================
+FIM DO CONTEÚDO
+================================================================================

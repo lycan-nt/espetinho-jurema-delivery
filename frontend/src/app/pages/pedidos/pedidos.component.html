@@ -1,0 +1,52 @@
+<h1 class="page-title">Pedidos</h1>
+<p class="subtle">Lista em tempo quase real (WebSocket). Toque para abrir o detalhe.</p>
+
+<div class="filtros">
+  <label>
+    Status
+    <select [(ngModel)]="filtroStatus" (change)="aplicarFiltro()" name="fs">
+      <option value="">Todos</option>
+      <option value="ABERTO">Aberto</option>
+      <option value="EM_PREPARO">Em preparo</option>
+      <option value="PRONTO">Pronto</option>
+      <option value="PAGO">Pago</option>
+      <option value="CANCELADO">Cancelado</option>
+    </select>
+  </label>
+  <label>
+    Tipo
+    <select [(ngModel)]="filtroTipo" (change)="aplicarFiltro()" name="ft">
+      <option value="">Todos</option>
+      <option value="MESA">Mesa</option>
+    </select>
+  </label>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Tipo</th>
+        <th>Status</th>
+        <th>Mesa</th>
+        <th>Responsável</th>
+        <th>Total</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (p of lista; track p.id) {
+        <tr>
+          <td>{{ p.id }}</td>
+          <td>{{ p.tipo }}</td>
+          <td><span class="pill">{{ p.status }}</span></td>
+          <td>{{ p.mesaNumero ?? '—' }}</td>
+          <td>{{ p.colaboradorNome ?? '—' }}</td>
+          <td>{{ p.totalItens | number : '1.2-2' }}</td>
+          <td><a [routerLink]="['/pedidos', p.id]">Abrir</a></td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

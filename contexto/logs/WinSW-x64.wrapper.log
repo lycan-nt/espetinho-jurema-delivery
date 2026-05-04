@@ -1,0 +1,6 @@
+2026-04-29T08:01:56.870 INFO  console - Installing service 'Espetinho Jurema - Delivery (EspetinhoJurema)'...
+2026-04-29T08:01:57.118 INFO  console - Service 'Espetinho Jurema - Delivery (EspetinhoJurema)' was installed successfully.
+2026-04-29T08:02:23.715 DEBUG console - Starting WinSW in service mode.
+2026-04-29T08:02:23.868 INFO  service - Starting cmd
+2026-04-29T08:02:23.999 INFO  service - Started process cmd (15432).
+2026-04-29T08:02:24.137 INFO  service - Service started successfully.

@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: espetinho-jurema-api
+    ports:
+      - "9090:9090"
+    volumes:
+      - espetinho-h2-data:/app/data
+    environment:
+      H2_FILE_PATH: /app/data/espetinho
+      H2_BACKUP_DIR: /app/data/backups
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: espetinho-jurema-web
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  espetinho-h2-data:

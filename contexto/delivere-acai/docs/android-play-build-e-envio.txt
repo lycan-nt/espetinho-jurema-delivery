@@ -1,0 +1,74 @@
+Fluxo "igual antes": link do Expo pro cliente (APK) — o mais comum
+====================================================================
+Objetivo: gerar o app Android na nuvem e mandar o **link da página do build**
+(expo.dev) para o cliente baixar o **.apk** — fora da Play Store.
+
+Comando (na pasta app/):
+  npm run build:android
+  ou: npm run build:android:client
+
+Usa o perfil **preview**: distribution **internal** + **apk**.
+
+Depois do build concluir:
+1. Abra o link que o terminal mostra (ou https://expo.dev → seu projeto → Builds).
+2. Compartilhe a URL do build; no celular Android o cliente abre o link e
+   baixa o APK (pode ser preciso "Permitir fontes desconhecidas" na 1ª vez).
+
+Isto NÃO publica na Google Play. Para produção na loja use build:android:prod
+e a Play Console (seção abaixo).
+
+---------------------------------------------
+
+Android (Play Store) — build e envio com EAS
+=============================================
+
+Pré-requisitos
+--------------
+1. Conta Google Play Console com taxa paga (app já criado ou a criar).
+2. Nome de pacote igual ao do app: br.com.delivere.acaigestao
+3. No primeiro upload na Play, o Google exige ficha de conteúdo, privacidade, etc. (igual iOS, em geral).
+4. O perfil "production" gera AAB (Android App Bundle), exigido pela Play.
+
+Versão
+------
+• version (nome ao usuário): 1.0.0 no app.config.js
+• versionCode: inteiro que **sempre aumenta** a cada .aab enviado (atual: ver app.config.js)
+
+Comandos (na pasta app/)
+------------------------
+Gerar o bundle na nuvem (EAS):
+
+  npm run build:android:prod
+
+  ou: npx eas-cli build --platform android --profile production
+
+Acompanhe no painel: https://expo.dev
+Baixe o .aab quando o build terminar (ou use submit abaixo).
+
+Enviar para a Play Store (EAS Submit)
+-------------------------------------
+1. Crie um **service account** no Google Cloud vinculado à Play (API do Android Publisher).
+2. Conceda permissão na Play Console a esse e-mail.
+3. Baixe a chave JSON e na máquina:
+
+  npx eas submit --platform android --latest
+
+  (Na primeira vez o EAS pergunta o caminho do JSON ou use variável de gravação
+   de credenciais: https://docs.expo.dev/submit/android/ )
+
+Se preferir **upload manual**:
+  Play Console → App → Teste (interno/fechado) ou Produção → Criar versão →
+  envie o ficheiro .aab baixado do EAS.
+
+Teste interno (recomendado antes de produção)
+-------------------------------------------
+1. Crie a faixa "Teste interno" na Play e adicione e-mails de testador.
+2. Suba o mesmo .aab nessa faixa; o cliente instala com o **link de opt-in**
+   que a Play gera (ou pelo Play Store com conta testadora).
+
+APK de pré-visualização (sem Play)
+----------------------------------
+Para instalar fora da loja (só em dev/instalação direta), use o perfil **preview**,
+que gera APK (não serve como substituto de produção na loja pública em longo prazo):
+
+  npx eas-cli build --platform android --profile preview

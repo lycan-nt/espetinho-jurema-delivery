@@ -1,0 +1,65 @@
+<div class="page">
+  <header class="page-header">
+    <h1>Acesso Móvel</h1>
+    <p class="subtitle">Aponte a câmera do celular para o QR Code e acesse o sistema na rede local.</p>
+  </header>
+
+  @if (carregando) {
+    <div class="estado-info">
+      <span class="spinner"></span> Buscando IPs da máquina...
+    </div>
+  }
+
+  @if (erro) {
+    <div class="estado-erro">
+      <span>⚠ {{ erro }}</span>
+      <button class="btn-retry" (click)="carregar()">Tentar novamente</button>
+    </div>
+  }
+
+  @if (!carregando && !erro && entradas.length === 0) {
+    <div class="estado-info">
+      Nenhum IP de rede local encontrado. Verifique se o computador está conectado à rede.
+    </div>
+  }
+
+  @if (!carregando && !erro && entradas.length > 0) {
+    <div class="card-acesso">
+
+      @if (entradas.length > 1) {
+        <div class="ip-tabs">
+          @for (entrada of entradas; track entrada.ip) {
+            <button
+              type="button"
+              class="ip-tab"
+              [class.active]="entrada.ip === ipSelecionado"
+              (click)="selecionar(entrada.ip)"
+            >
+              {{ entrada.ip }}
+            </button>
+          }
+        </div>
+      }
+
+      <div class="qr-wrapper">
+        <qrcode
+          [qrdata]="urlSelecionada"
+          [width]="220"
+          errorCorrectionLevel="M"
+          [margin]="2"
+          colorDark="#1a1a2e"
+          colorLight="#ffffff"
+        />
+      </div>
+
+      <div class="url-box">
+        <span class="url-label">Endereço:</span>
+        <a class="url-link" [href]="urlSelecionada" target="_blank" rel="noopener">{{ urlSelecionada }}</a>
+      </div>
+
+      <p class="instrucao">
+        Certifique-se de que o celular está conectado à mesma rede Wi-Fi que este computador.
+      </p>
+    </div>
+  }
+</div>

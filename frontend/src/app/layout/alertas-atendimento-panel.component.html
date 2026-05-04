@@ -1,0 +1,38 @@
+@if (visivel() && alertas.fila().length > 0) {
+  <div class="alertas-stack">
+    <div
+      class="mesa-badges"
+      [class.piscando]="alertas.alarmeAtivo()"
+      role="status"
+      [attr.aria-busy]="alertas.alarmeAtivo()"
+    >
+      @for (a of alertas.fila(); track a.alertaId) {
+        <span class="mesa-caixa">Mesa {{ a.mesaNumero }}</span>
+      }
+    </div>
+    <div class="alertas-dock" role="region" aria-label="Alertas de mesa">
+      @for (a of alertas.fila(); track a.alertaId) {
+        <div class="alerta-card">
+          <div class="alerta-body">
+            <strong>Comanda para a cozinha</strong>
+            <span class="mesa">Mesa {{ a.mesaNumero }}</span>
+            <span class="ped">Pedido #{{ a.pedidoId }}</span>
+          </div>
+          <div class="alerta-actions">
+            <button
+              type="button"
+              class="btn btn-primary sm"
+              [disabled]="alertas.processandoId() === a.alertaId"
+              (click)="ok(a.alertaId)"
+            >
+              {{ alertas.processandoId() === a.alertaId ? 'Imprimindo…' : 'Imprimir comanda' }}
+            </button>
+            <button type="button" class="btn btn-ghost sm" [disabled]="alertas.processandoId() === a.alertaId" (click)="ignorar(a.alertaId)">
+              Ignorar
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

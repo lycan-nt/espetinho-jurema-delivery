@@ -1,0 +1,103 @@
+<h1 class="page-title">Usuários</h1>
+<p class="subtle">Cadastro de logins do sistema. Apenas perfil atendimento acessa esta tela.</p>
+
+@if (erro) {
+  <p class="err">{{ erro }}</p>
+}
+
+<div class="panel">
+  <h2>Novo usuário</h2>
+  <div class="row">
+    <div class="field grow">
+      <label for="nl">Login</label>
+      <input id="nl" name="nl" [(ngModel)]="novoLogin" autocomplete="off" />
+    </div>
+    <div class="field grow">
+      <label for="nn">Nome exibido</label>
+      <input id="nn" name="nn" [(ngModel)]="novoNome" />
+    </div>
+    <div class="field w-perfil">
+      <label for="np">Perfil</label>
+      <select id="np" name="np" [(ngModel)]="novoPerfil">
+        @for (p of perfis; track p) {
+          <option [ngValue]="p">{{ rotuloPerfil[p] }}</option>
+        }
+      </select>
+    </div>
+    <div class="field w-senha">
+      <label for="ns">Senha</label>
+      <input id="ns" name="ns" type="password" [(ngModel)]="novaSenha" autocomplete="new-password" />
+    </div>
+  </div>
+  <button type="button" class="btn btn-primary" [disabled]="salvandoNovo" (click)="criar()">
+    {{ salvandoNovo ? 'Salvando…' : 'Criar usuário' }}
+  </button>
+</div>
+
+@if (editandoId !== null) {
+  <div class="panel panel-edit">
+    <h2>Editar usuário — {{ editLogin }}</h2>
+    <div class="row">
+      <div class="field grow">
+        <label for="en">Nome exibido</label>
+        <input id="en" name="en" [(ngModel)]="editNome" />
+      </div>
+      <div class="field w-perfil">
+        <label for="ep">Perfil</label>
+        <select id="ep" name="ep" [(ngModel)]="editPerfil">
+          @for (p of perfis; track p) {
+            <option [ngValue]="p">{{ rotuloPerfil[p] }}</option>
+          }
+        </select>
+      </div>
+      <label class="field row-check">
+        <input type="checkbox" [(ngModel)]="editAtivo" name="ea" />
+        <span>Ativo</span>
+      </label>
+      <div class="field w-senha">
+        <label for="es">Nova senha (opcional)</label>
+        <input id="es" name="es" type="password" [(ngModel)]="editSenha" autocomplete="new-password" />
+      </div>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn btn-primary" [disabled]="salvandoEdit" (click)="salvarEdicao()">
+        {{ salvandoEdit ? 'Salvando…' : 'Salvar alterações' }}
+      </button>
+      <button type="button" class="btn btn-ghost" [disabled]="salvandoEdit" (click)="cancelarEdicao()">Cancelar</button>
+    </div>
+  </div>
+}
+
+<div class="panel">
+  <h2>Lista</h2>
+  @if (carregando) {
+    <p class="subtle">Carregando…</p>
+  } @else {
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Login</th>
+            <th>Nome</th>
+            <th>Perfil</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of lista; track u.id) {
+            <tr [class.inactive]="!u.ativo">
+              <td>{{ u.login }}</td>
+              <td>{{ u.nomeExibicao }}</td>
+              <td>{{ rotuloPerfil[u.perfil] }}</td>
+              <td>{{ u.ativo ? 'Ativo' : 'Inativo' }}</td>
+              <td>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="iniciarEdicao(u)">Editar</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

@@ -1,0 +1,103 @@
+<div class="app" [class.nav-open]="navAberta">
+  <button type="button" class="nav-backdrop" (click)="fecharNavMobile()" aria-label="Fechar menu"></button>
+
+  <aside class="sidebar" (click)="fecharNavMobile()">
+    <div class="brand" routerLink="/inicio" (click)="$event.stopPropagation()">
+      <img src="/assets/logo.png" alt="Espetinho Jurema" class="brand-logo" />
+      <div class="brand-text">
+        <span class="brand-title">Espetinho Jurema</span>
+        <span class="brand-sub">Desde 2022</span>
+      </div>
+    </div>
+
+    <nav class="nav-main" (click)="$event.stopPropagation()">
+      <a routerLink="/inicio" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <span class="ic">⌂</span> Início
+      </a>
+      <a routerLink="/mesas" routerLinkActive="active">
+        <span class="ic">▦</span> Mesas
+      </a>
+      <a routerLink="/pedidos" routerLinkActive="active">
+        <span class="ic">≡</span> Pedidos
+      </a>
+
+      @if (auth.usuario()?.perfil === 'ATENDIMENTO') {
+        <a routerLink="/estoque" routerLinkActive="active">
+          <span class="ic">▤</span> Estoque
+        </a>
+        <a routerLink="/relatorio" routerLinkActive="active">
+          <span class="ic">◫</span> Relatório
+        </a>
+
+        <!-- Grupo Configurações -->
+        <div class="nav-group">
+          <button
+            type="button"
+            class="nav-group-toggle"
+            [class.active]="emRotaConfig()"
+            [class.open]="configAberto"
+            (click)="toggleConfig($event)"
+          >
+            <span class="ic">⚙</span>
+            <span class="nav-group-label">Configurações</span>
+            <span class="nav-group-chevron">›</span>
+          </button>
+
+          @if (configAberto) {
+            <div class="nav-group-items">
+              <a routerLink="/config/impressao" routerLinkActive="active" (click)="$event.stopPropagation()">
+                <span class="ic-sub">⋯</span> Impressora
+              </a>
+              <a routerLink="/cadastro/produtos" routerLinkActive="active" (click)="$event.stopPropagation()">
+                <span class="ic-sub">◆</span> Produtos
+              </a>
+              <a routerLink="/cadastro/usuarios" routerLinkActive="active" (click)="$event.stopPropagation()">
+                <span class="ic-sub">◎</span> Usuários
+              </a>
+              <a routerLink="/config/acesso-movel" routerLinkActive="active" (click)="$event.stopPropagation()">
+                <span class="ic-sub">📱</span> Acesso Móvel
+              </a>
+            </div>
+          }
+        </div>
+      }
+    </nav>
+
+    <div class="nav-spacer"></div>
+
+    <footer class="sidebar-foot" (click)="$event.stopPropagation()">
+      <span class="status-dot"></span> Serviço local
+      <span class="ver">v1.0</span>
+    </footer>
+  </aside>
+
+  <div class="main-wrap">
+    <header class="topbar">
+      <button type="button" class="menu-btn" (click)="toggleNav()" aria-label="Menu">☰</button>
+
+      <!-- Desktop: data e hora completas -->
+      <span class="hora hora-desktop">{{ relogio }}</span>
+
+      <!-- Mobile: bloco compacto com data + hora em duas linhas -->
+      <div class="hora-mobile">
+        <span class="hora-mobile-hora">{{ relogioHora }}</span>
+        <span class="hora-mobile-data">{{ relogioData }}</span>
+      </div>
+
+      <div class="topbar-right">
+        @if (auth.usuario(); as u) {
+          <span class="user-pill" [title]="u.perfil">{{ u.nome }}</span>
+          <button type="button" class="btn-sair" (click)="auth.logout()">Sair</button>
+        }
+        <span class="caixa" [ngClass]="{ ok: caixaAberto, closed: !caixaAberto }">
+          <span class="caixa-text-full">{{ caixaAberto ? 'CAIXA ABERTO' : 'CAIXA FECHADO' }}</span>
+          <span class="caixa-dot-mobile"></span>
+        </span>
+      </div>
+    </header>
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+  <app-alertas-atendimento-panel />
+</div>

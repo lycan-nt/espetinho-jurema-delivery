@@ -1,0 +1,204 @@
+<h1 class="page-title">Controle de mesas</h1>
+<p class="subtle">
+  @if (resumo) {
+    Ocupação: {{ resumo.ocupadas }}/{{ resumo.total }}
+  }
+</p>
+
+<div class="tabs">
+  <button type="button" [class.active]="filtro === 'todas'" (click)="filtro = 'todas'">Todas</button>
+  <button type="button" [class.active]="filtro === 'ocupadas'" (click)="filtro = 'ocupadas'">
+    Ocupadas @if (resumo) { ({{ resumo.ocupadas }}) }
+  </button>
+  <button type="button" [class.active]="filtro === 'encerrando'" (click)="filtro = 'encerrando'">
+    Encerrando @if (resumo) { ({{ resumo.encerrandoServico }}) }
+  </button>
+  <button type="button" [class.active]="filtro === 'livres'" (click)="filtro = 'livres'">
+    Livres @if (resumo) { ({{ resumo.livres }}) }
+  </button>
+</div>
+
+<div class="grid-mesax">
+  @for (m of mesasVisiveis(); track m.id) {
+    <button
+      type="button"
+      class="card-mesa"
+      [class.livre]="!m.ocupada"
+      [class.ocupada]="m.ocupada"
+      [class.selected]="mesaSelecionada?.id === m.id"
+      (click)="selecionarMesa(m)"
+    >
+      <span class="num">{{ m.numero }}</span>
+      @if (m.ocupada) {
+        <span class="emoji">🍴</span>
+        <span class="st">Ocupada</span>
+      } @else {
+        <span class="emoji">▢</span>
+        <span class="st">Disponível</span>
+      }
+    </button>
+  }
+</div>
+
+@if (drawerAberto && mesaSelecionada) {
+  <div class="drawer-overlay" (click)="fecharDrawer()"></div>
+  <aside class="drawer" (click)="$event.stopPropagation()">
+    <h2>Detalhes da mesa</h2>
+    <div class="mesa-id">Mesa {{ mesaSelecionada.numero }}</div>
+
+    @if (mesaSelecionada.pedidoAbertoId) {
+      <p class="hint-open">Esta mesa já possui pedido em andamento.</p>
+      <button type="button" class="btn btn-primary full" (click)="irPedido(mesaSelecionada)">
+        Abrir pedido #{{ mesaSelecionada.pedidoAbertoId }}
+      </button>
+      @if (podeQuitarContaNoCaixa()) {
+        <button type="button" class="btn btn-outline full" (click)="abrirModalQuitarConta()">Quitar conta</button>
+      }
+      <button type="button" class="btn btn-ghost full" (click)="fecharDrawer()">Fechar</button>
+    } @else {
+      <div class="field">
+        <label for="cli">Cliente (opcional)</label>
+        <input
+          id="cli"
+          name="cli"
+          type="text"
+          [(ngModel)]="clienteNome"
+          autocomplete="name"
+          placeholder="Nome se quiser identificar a mesa"
+        />
+      </div>
+      <div class="field">
+        <label for="desc">Descrição</label>
+        <textarea id="desc" name="desc" [(ngModel)]="descricao" rows="2"></textarea>
+      </div>
+      <div class="field">
+        <label for="pes">Pessoas</label>
+        <input id="pes" name="pes" type="number" min="1" [(ngModel)]="pessoas" />
+      </div>
+      <div class="field row">
+        <label>
+          <input type="checkbox" [(ngModel)]="documentoFiscal" name="nf" />
+          Documento fiscal
+        </label>
+      </div>
+      @if (erro) {
+        <p class="err">{{ erro }}</p>
+      }
+      <button type="button" class="btn btn-primary full" [disabled]="carregando" (click)="iniciarMesa()">
+        + Iniciar
+      </button>
+      <button type="button" class="btn btn-ghost full" (click)="fecharDrawer()">Cancelar</button>
+    }
+  </aside>
+}
+
+@if (drawerAberto && mesaSelecionada && modalQuitarConta) {
+  <div class="modal-quitar-overlay" (click)="fecharModalQuitarConta()"></div>
+  <div class="modal-quitar" role="dialog" aria-modal="true" aria-labelledby="modal-quitar-titulo" (click)="$event.stopPropagation()">
+    <h3 id="modal-quitar-titulo">Quitar conta</h3>
+    <p class="modal-quitar-sub">Mesa {{ mesaSelecionada.numero }} · Pedido #{{ mesaSelecionada.pedidoAbertoId }}</p>
+
+    @if (carregandoPedidoModal) {
+      <p class="modal-quitar-loading">Carregando conta…</p>
+    } @else if (pedidoModal) {
+      <div class="resumo-conta">
+        <div class="resumo-linha">
+          <span>Total (itens)</span>
+          <strong>{{ pedidoModal.total | number : '1.2-2' }}</strong>
+        </div>
+        <div class="resumo-linha">
+          <span>Valor pago</span>
+          <strong>{{ (pedidoModal.totalPago ?? 0) | number : '1.2-2' }}</strong>
+        </div>
+        <div class="resumo-linha falta">
+          <span>Falta pagar</span>
+          <strong>{{ restanteConta(pedidoModal) | number : '1.2-2' }}</strong>
+        </div>
+      </div>
+
+      @if (pedidoModal.status === 'PAGO' || pedidoModal.status === 'CANCELADO') {
+        <p class="hint-open">Este pedido já está {{ pedidoModal.status === 'PAGO' ? 'quitado' : 'cancelado' }}.</p>
+        <button type="button" class="btn btn-primary full" (click)="fecharModalQuitarConta()">Ok</button>
+      } @else if (pedidoModal.total === 0) {
+        <p class="hint-open">Sem itens lançados. Encerre sem cobrança.</p>
+        @if (erroPagamentoModal) {
+          <p class="err">{{ erroPagamentoModal }}</p>
+        }
+        <button
+          type="button"
+          class="btn btn-primary full"
+          [disabled]="carregandoPagamentoModal"
+          (click)="encerrarSemValorModal()"
+        >
+          {{ carregandoPagamentoModal ? 'Encerrando…' : 'Encerrar sem valor' }}
+        </button>
+      } @else if (restanteConta(pedidoModal) > 0.005) {
+        @if ((pedidoModal.pagamentos ?? []).length) {
+          <div class="modal-pg-list">
+            <span class="modal-pg-cab">Pagamentos já registrados</span>
+            <ul>
+              @for (pg of pedidoModal.pagamentos ?? []; track pg.id) {
+                <li>
+                  <span>{{ rotuloForma[pg.forma] }}</span>
+                  <span>{{ pg.valor | number : '1.2-2' }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+
+        <p class="hint-pg-modal">Parcial ou total. Em dinheiro, informe o recebido se houver troco.</p>
+
+        <div class="atalhos-valor">
+          @for (n of atalhosValor; track n) {
+            <button type="button" class="btn btn-chip" (click)="aplicarAtalhoValor(n)">R$ {{ n }}</button>
+          }
+        </div>
+
+        <div class="row-modal">
+          <div class="field">
+            <label for="forma-modal">Forma</label>
+            <select id="forma-modal" name="formaModal" [(ngModel)]="formaPagamento" (change)="onFormaModalChange()">
+              @for (f of formas; track f) {
+                <option [ngValue]="f">{{ rotuloForma[f] }}</option>
+              }
+            </select>
+          </div>
+          <div class="field w-valor-modal">
+            <label for="valor-modal">Valor (conta)</label>
+            <input id="valor-modal" type="number" min="0.01" step="0.01" [(ngModel)]="valorPagamento" name="valorModal" />
+          </div>
+          @if (formaPagamento === 'DINHEIRO') {
+            <div class="field w-valor-modal">
+              <label for="recebido-modal">Recebido (espécie)</label>
+              <input
+                id="recebido-modal"
+                type="number"
+                min="0.01"
+                step="0.01"
+                [(ngModel)]="valorRecebidoDinheiro"
+                name="recebidoModal"
+                placeholder="Troco"
+              />
+            </div>
+          }
+        </div>
+        @if (erroPagamentoModal) {
+          <p class="err">{{ erroPagamentoModal }}</p>
+        }
+        <div class="modal-quitar-acoes">
+          <button type="button" class="btn btn-ghost" (click)="fecharModalQuitarConta()">Cancelar</button>
+          <button type="button" class="btn btn-primary" [disabled]="carregandoPagamentoModal" (click)="registrarPagamentoModal()">
+            {{ carregandoPagamentoModal ? 'Registrando…' : 'Registrar pagamento' }}
+          </button>
+        </div>
+      } @else {
+        <p class="hint-open">Saldo quitado. O pedido será encerrado ao registrar o último pagamento.</p>
+        <button type="button" class="btn btn-primary full" (click)="fecharModalQuitarConta()">Ok</button>
+      }
+    } @else {
+      <p class="err">{{ erroPagamentoModal ?? 'Pedido não encontrado.' }}</p>
+      <button type="button" class="btn btn-primary full" (click)="fecharModalQuitarConta()">Fechar</button>
+    }
+  </div>
+}

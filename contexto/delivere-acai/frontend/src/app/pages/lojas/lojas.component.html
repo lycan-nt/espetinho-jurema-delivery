@@ -1,0 +1,133 @@
+<div class="lojas-page">
+  <header class="lojas-header">
+    <div class="header-text">
+      <a routerLink="/gestao" class="back-link">← Gestão</a>
+      <h1 class="page-title">Lojas</h1>
+      <p class="page-subtitle">Cadastre as lojas (unidades): ID, nome, endereço e responsável. O ID é o identificador da loja (igual ao <code>app.loja.id</code> de cada instalação). Os dados vão para o MongoDB com data e id da loja para histórico.</p>
+    </div>
+  </header>
+
+  @if (errorPermissao) {
+    <div class="message error">
+      <strong>Sem permissão.</strong> Você não tem acesso ao módulo de Gestão.
+    </div>
+  }
+  @if (error && !errorPermissao) {
+    <div class="message error">{{ error }}</div>
+  }
+  @if (sucesso) {
+    <div class="message success">{{ sucesso }}</div>
+  }
+
+  <section class="form-section">
+    <div class="card form-card">
+      <h2 class="form-title">{{ editandoId ? 'Editar loja' : 'Nova loja' }}</h2>
+      <form (ngSubmit)="enviar()" class="lojas-form">
+        <div class="form-group">
+          <label for="id">ID da loja <span class="obrigatorio">(obrigatório)</span></label>
+          <input
+            id="id"
+            type="text"
+            [(ngModel)]="id"
+            name="id"
+            class="input"
+            placeholder="Ex.: 01, 02, LOJA-A"
+            maxlength="32"
+            [readonly]="!!editandoId"
+          />
+          <span class="field-hint">Identificador único. Não pode ser alterado após criar. Use o mesmo ID em <code>app.loja.id</code> na instalação dessa loja.</span>
+        </div>
+        <div class="form-group">
+          <label for="nome">Nome da loja <span class="obrigatorio">(obrigatório)</span></label>
+          <input
+            id="nome"
+            type="text"
+            [(ngModel)]="nome"
+            name="nome"
+            class="input"
+            placeholder="Ex.: Mix Açaí Centro"
+            maxlength="120"
+          />
+        </div>
+        <div class="form-group">
+          <label for="endereco">Endereço</label>
+          <input
+            id="endereco"
+            type="text"
+            [(ngModel)]="endereco"
+            name="endereco"
+            class="input"
+            placeholder="Ex.: Rua das Flores, 100"
+            maxlength="255"
+          />
+        </div>
+        <div class="form-group">
+          <label for="responsavel">Responsável</label>
+          <input
+            id="responsavel"
+            type="text"
+            [(ngModel)]="responsavel"
+            name="responsavel"
+            class="input"
+            placeholder="Ex.: João Silva"
+            maxlength="120"
+          />
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="salvando">
+            {{ salvando ? 'Salvando...' : (editandoId ? 'Salvar' : 'Cadastrar') }}
+          </button>
+          @if (editandoId) {
+            <button type="button" class="btn btn-outline" (click)="cancelarEdicao()" [disabled]="salvando">Cancelar</button>
+          }
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="list-section">
+    <h2 class="section-title">Lojas cadastradas</h2>
+    @if (loading) {
+      <div class="loading-row">
+        <div class="spinner small"></div>
+        <span>Carregando...</span>
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table class="lojas-table" aria-label="Lista de lojas">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nome</th>
+              <th>Endereço</th>
+              <th>Responsável</th>
+              <th class="th-acoes">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (lojas.length === 0) {
+              <tr>
+                <td colspan="5" class="empty">Nenhuma loja cadastrada.</td>
+              </tr>
+            } @else {
+              @for (l of lojas; track l.id) {
+                <tr>
+                  <td><code>{{ l.id }}</code></td>
+                  <td>{{ l.nome }}</td>
+                  <td>{{ l.endereco || '—' }}</td>
+                  <td>{{ l.responsavel || '—' }}</td>
+                  <td class="td-acoes">
+                    <button type="button" class="btn btn-sm btn-outline" (click)="editar(l)" [disabled]="excluindoId !== null" title="Editar">Editar</button>
+                    <button type="button" class="btn btn-sm btn-danger" (click)="excluir(l)" [disabled]="excluindoId === l.id" title="Excluir">
+                      {{ excluindoId === l.id ? 'Excluindo...' : 'Excluir' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

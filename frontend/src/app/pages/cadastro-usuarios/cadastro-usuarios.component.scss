@@ -1,0 +1,116 @@
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.panel h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.panel-edit {
+  border-color: var(--accent);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  align-items: flex-end;
+}
+
+.grow {
+  flex: 1;
+  min-width: 140px;
+}
+
+.w-perfil {
+  min-width: 200px;
+}
+
+.w-senha {
+  min-width: 160px;
+}
+
+.field {
+  margin-bottom: 0;
+}
+
+.field.row-check {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  text-transform: none;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.err {
+  color: var(--warn);
+  margin: 0 0 1rem;
+}
+
+.tbl-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.tbl th,
+.tbl td {
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.tbl th {
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.tbl tr.inactive td {
+  opacity: 0.65;
+}
+
+.btn-sm {
+  min-height: 2.25rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 640px) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .grow,
+  .w-perfil,
+  .w-senha {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .panel .btn-primary {
+    width: 100%;
+  }
+}

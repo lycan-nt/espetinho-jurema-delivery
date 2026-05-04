@@ -1,0 +1,76 @@
+<div class="login-page">
+
+  <!-- Painel esquerdo — marca -->
+  <div class="brand-panel" aria-hidden="true">
+    <div class="brand-glow"></div>
+    <div class="brand-content">
+      <img class="brand-logo" src="/assets/logo.png" alt="Espetinho Jurema" />
+      <h2 class="brand-name">Espetinho Jurema</h2>
+      <p class="brand-tagline">Sistema de gestão de mesas e pedidos</p>
+    </div>
+    <div class="brand-footer">
+      <span class="dev-label">Desenvolvido por</span>
+      <img class="alfatec-logo" src="/assets/logo-alfatec.jpeg" alt="AlfaTec" />
+      <span class="version-label">v1.0.0</span>
+    </div>
+  </div>
+
+  <!-- Painel direito — formulário -->
+  <div class="form-panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="user-icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+        </div>
+        <div>
+          <h1>Bem-vindo!</h1>
+          <p class="hint">Entre com seu usuário e senha para acessar.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="lg">Login</label>
+        <input
+          id="lg"
+          name="login"
+          [(ngModel)]="login"
+          autocomplete="username"
+          placeholder="Seu usuário"
+          (keydown.enter)="$event.preventDefault(); focarSenha(inputSenha)"
+        />
+      </div>
+      <div class="field">
+        <label for="sn">Senha</label>
+        <input
+          id="sn"
+          #inputSenha
+          name="senha"
+          type="password"
+          [(ngModel)]="senha"
+          autocomplete="current-password"
+          placeholder="Sua senha"
+          (keydown.enter)="$event.preventDefault(); entrar()"
+        />
+      </div>
+
+      @if (erro) {
+        <p class="err">{{ erro }}</p>
+      }
+
+      <button type="button" class="btn btn-primary full" [disabled]="carregando" (click)="entrar()">
+        {{ carregando ? 'Entrando…' : 'Entrar' }}
+      </button>
+
+      <!-- Logo Alfatec no mobile (painel esquerdo fica escondido) -->
+      <div class="alfatec-mobile">
+        <span class="dev-label">Desenvolvido por</span>
+        <img class="alfatec-logo-sm" src="/assets/logo-alfatec.jpeg" alt="AlfaTec" />
+        <span class="version-label-mobile">v1.0.0</span>
+      </div>
+    </div>
+  </div>
+
+</div>

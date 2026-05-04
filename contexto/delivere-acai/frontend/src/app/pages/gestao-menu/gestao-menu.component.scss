@@ -1,0 +1,102 @@
+.gestao-menu-page {
+  max-width: 800px;
+  margin: 0 auto;
+  animation: fadeIn 0.35s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gestao-menu-header {
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  margin: 0 0 0.35rem 0;
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--acai-800);
+  letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.35rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid rgba(184, 95, 192, 0.12);
+  box-shadow: 0 4px 20px rgba(45, 27, 46, 0.06);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.card-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 8px 28px rgba(45, 27, 46, 0.1);
+    transform: translateY(-2px);
+  }
+}
+
+.card-icon {
+  font-size: 2.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.card-label {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--acai-800);
+}
+
+.card-desc {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.card-arrow {
+  font-size: 1.25rem;
+  color: var(--acai-400);
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .options-grid {
+    grid-template-columns: 1fr;
+  }
+}

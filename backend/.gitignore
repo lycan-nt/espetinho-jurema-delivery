@@ -1,0 +1,5 @@
+# Build
+target/
+
+# Frontend empacotado pelo deploy/build-pacote.* (copia para static antes do package)
+src/main/resources/static/

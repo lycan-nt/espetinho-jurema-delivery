@@ -1,0 +1,53 @@
+========================================
+  COMO RESTAURAR O BACKUP DO BANCO
+========================================
+
+Use quando for reinstalar o sistema (nova versao, problema no servidor, etc.)
+e quiser voltar com os dados a partir de um arquivo de backup.
+
+----------------------------------------
+1. ONDE FICAM OS BACKUPS
+----------------------------------------
+O sistema grava um backup do banco uma vez ao dia no caminho definido em
+application.properties (app.backup.path). O arquivo tem o nome:
+  acaidb-backup-AAAA-MM-DD.zip
+Exemplo: acaidb-backup-2025-02-15.zip
+
+----------------------------------------
+2. ANTES DE RESTAURAR
+----------------------------------------
+- PARE a aplicacao (servico ou processo que roda o acai-app.jar).
+- Tenha em maos o caminho do arquivo de backup (.zip) que deseja restaurar.
+
+----------------------------------------
+3. RESTAURAR
+----------------------------------------
+1) Abra o Prompt de Comando (cmd).
+
+2) Va ate a pasta "app" (a mesma onde esta o acai-app.jar e a pasta data).
+   Exemplo:  cd C:\MixAcai\instalar\app
+
+3) Execute o script passando o caminho completo do arquivo de backup entre aspas:
+   restaurar-backup.bat "C:\backup\acaidb-backup-2025-02-15.zip"
+
+   Troque pelo caminho real do seu arquivo .zip.
+
+4) O script vai:
+   - Fazer copia de seguranca da pasta data atual (se existir) em data.old
+   - Descompactar o backup na pasta data
+   - Mostrar "Restauracao concluida"
+
+5) Inicie a aplicacao normalmente (servico ou java -jar acai-app.jar).
+
+----------------------------------------
+4. EXEMPLO COMPLETO
+----------------------------------------
+  cd C:\MixAcai\instalar\app
+  restaurar-backup.bat "D:\backups\acaidb-backup-2025-02-15.zip"
+
+----------------------------------------
+Duvidas: o script restaurar-backup.bat
+esta nesta pasta (app). Execute sem
+argumentos para ver o uso:
+  restaurar-backup.bat
+========================================

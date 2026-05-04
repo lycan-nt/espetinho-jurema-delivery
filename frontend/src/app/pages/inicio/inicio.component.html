@@ -1,0 +1,40 @@
+<h1 class="page-title">Início</h1>
+<p class="subtle">Visão geral do salão — Espetinho Jurema</p>
+
+@if (resumo) {
+  <div class="cards">
+    <a class="card" routerLink="/mesas">
+      <span class="label">Ocupação</span>
+      <span class="value">{{ resumo.ocupadas }}/{{ resumo.total }}</span>
+      <span class="hint">Mesas</span>
+    </a>
+    <a class="card" routerLink="/mesas">
+      <span class="label">Livres</span>
+      <span class="value">{{ resumo.livres }}</span>
+    </a>
+    <a class="card" routerLink="/pedidos">
+      <span class="label">Pedidos</span>
+      <span class="value">Ver lista</span>
+    </a>
+    @if (auth.usuario()?.perfil === 'ATENDIMENTO' && faturamentoMes) {
+      <a class="card" routerLink="/relatorio">
+        <span class="label">Receita no mês (pagamentos)</span>
+        <span class="value">{{ faturamentoMes.receitaTotal | number : '1.2-2' }}</span>
+        <span class="hint">Relatório</span>
+      </a>
+    }
+  </div>
+}
+
+@if (auth.usuario()?.perfil === 'ATENDIMENTO' && erroFat) {
+  <p class="err-fat">{{ erroFat }}</p>
+}
+
+<div class="actions">
+  <a class="btn btn-primary" routerLink="/mesas">Controle de mesas</a>
+  <a class="btn btn-ghost" routerLink="/pedidos">Pedidos</a>
+  @if (auth.usuario()?.perfil === 'ATENDIMENTO') {
+    <a class="btn btn-ghost" routerLink="/estoque">Estoque</a>
+    <a class="btn btn-ghost" routerLink="/relatorio">Relatório</a>
+  }
+</div>

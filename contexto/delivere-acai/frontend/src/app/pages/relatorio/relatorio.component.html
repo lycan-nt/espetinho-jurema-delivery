@@ -1,0 +1,238 @@
+<div class="page gestao-page">
+  <header class="gestao-header">
+    <div class="header-text">
+      <a routerLink="/gestao" class="back-link">← Gestão</a>
+      <h1 class="page-title">Vendas</h1>
+      <p class="page-subtitle">Relatórios de vendas, comandas fechadas, totais por forma de pagamento e movimentação de caixa. Envie para o Google Sheets ou imprima.</p>
+    </div>
+    <div class="toolbar no-print">
+      <button type="button" class="btn btn-google-sheets" (click)="enviarGoogleSheets()" [disabled]="loading || enviandoSheets">
+        <span class="btn-icon">📤</span>
+        {{ enviandoSheets ? 'Enviando...' : 'Enviar para Google Sheets' }}
+      </button>
+      <button type="button" class="btn btn-print" (click)="imprimir()" [disabled]="loading">
+        <span class="btn-icon">🖨️</span>
+        Imprimir
+      </button>
+    </div>
+  </header>
+
+  <section class="filtro-periodo no-print">
+    <div class="filtro-row">
+      <div class="filtro-dates">
+        <div class="form-group">
+          <label for="dataInicio">Data início</label>
+          <input id="dataInicio" type="date" [(ngModel)]="dataInicio" class="input" />
+        </div>
+        <div class="form-group">
+          <label for="dataFim">Data fim</label>
+          <input id="dataFim" type="date" [(ngModel)]="dataFim" class="input" />
+        </div>
+      </div>
+      <div class="filtro-buttons">
+        <button type="button" class="btn btn-hoje" (click)="filtrarHoje()">Hoje</button>
+        <button type="button" class="btn btn-filtrar" (click)="aplicarFiltro()" [disabled]="loading">Filtrar</button>
+      </div>
+    </div>
+    <div class="filtro-tipo-produto">
+      <span class="filtro-tipo-label">Tipo de produto:</span>
+      <button type="button" class="btn btn-filtro-tipo" [class.active]="filtroTipoProduto === 'TODOS'" (click)="filtroTipoProduto = 'TODOS'">Todos</button>
+      <button type="button" class="btn btn-filtro-tipo" [class.active]="filtroTipoProduto === 'POR_PESO'" (click)="filtroTipoProduto = 'POR_PESO'">Por peso</button>
+      <button type="button" class="btn btn-filtro-tipo" [class.active]="filtroTipoProduto === 'PRECO_FIXO'" (click)="filtroTipoProduto = 'PRECO_FIXO'">Preço fixo</button>
+    </div>
+    <p class="periodo-texto">{{ textoPeriodo }}</p>
+  </section>
+
+  @if (errorPermissao) {
+    <div class="message error message-permissao">
+      <strong>Sem permissão.</strong> Você não tem acesso ao módulo de Gestão. Entre em contato com o administrador.
+    </div>
+  }
+  @if (error && !errorPermissao) {
+    <div class="message error">{{ error }}</div>
+  }
+  @if (mensagemSheets) {
+    <div class="message {{ mensagemSheets.startsWith('Erro') ? 'error' : 'success' }}">{{ mensagemSheets }}</div>
+  }
+
+  @if (loading) {
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      <p>Carregando relatório...</p>
+    </div>
+  } @else {
+    <p class="periodo-impressao">{{ textoPeriodo }}</p>
+    <section class="resumo-section">
+      <div class="card card-total">
+        <div class="card-accent"></div>
+        <div class="card-body">
+          <span class="card-label">Total de vendas {{ filtroTipoProduto !== 'TODOS' ? '(' + (filtroTipoProduto === 'POR_PESO' ? 'por peso' : 'preço fixo') + ')' : '' }}</span>
+          <span class="card-value">R$ {{ totalVendasExibido | number : '1.2-2' }}</span>
+        </div>
+      </div>
+      <div class="card card-formas">
+        <h3 class="card-heading">Por forma de pagamento</h3>
+        @if (totalPorFormaExibido.length === 0) {
+          <p class="empty-forma">Nenhuma comanda fechada ainda.</p>
+        } @else {
+          <ul class="forma-list">
+            @for (item of totalPorFormaExibido; track item.forma) {
+              <li class="forma-item">
+                <span class="forma-nome">{{ item.forma }}</span>
+                <span class="forma-valor">R$ {{ item.total | number : '1.2-2' }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </section>
+
+    @if (caixas.length > 0) {
+      <section class="caixa-section">
+        <h2 class="section-title">
+          <span class="section-title-text">Caixa (aberturas e fechamentos)</span>
+          <span class="section-badge">{{ caixas.length }} {{ caixas.length === 1 ? 'registro' : 'registros' }}</span>
+        </h2>
+        <div class="table-wrap">
+          <table class="table table-caixa">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th class="th-num">Valor abertura (R$)</th>
+                <th>Abertura (data/hora)</th>
+                <th class="th-num">Valor fechamento (R$)</th>
+                <th class="th-num">Valor retirada (R$)</th>
+                <th>Fechamento (data/hora)</th>
+                <th>Reabertura</th>
+                <th>Abriu</th>
+                <th>Fechou</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (cx of caixas; track cx.id) {
+                <tr>
+                  <td class="td-date">{{ formatarDataCaixa(cx.data) }}</td>
+                  <td class="td-num">R$ {{ cx.valorAbertura | number : '1.2-2' }}</td>
+                  <td class="td-date">{{ formatarData(cx.dataHoraAbertura) }}</td>
+                  <td class="td-num">@if (cx.dataHoraFechamento) { R$ {{ (cx.valorFechamento ?? 0) | number : '1.2-2' }} } @else { — }</td>
+                  <td class="td-num">@if ((cx.valorRetirada ?? 0) > 0) { R$ {{ cx.valorRetirada | number : '1.2-2' }} } @else { — }</td>
+                  <td class="td-date">{{ formatarData(cx.dataHoraFechamento) }}</td>
+                  <td>{{ cx.reabertura ? 'Sim' : '—' }}</td>
+                  <td class="td-user">{{ cx.openedByUsername || '—' }}</td>
+                  <td class="td-user">{{ cx.closedByUsername || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    <section class="comandas-section">
+      <h2 class="section-title">
+        <span class="section-title-text">Comandas fechadas</span>
+        @if (comandasFiltradas.length > 0) {
+          <span class="section-badge">{{ comandasFiltradas.length }} {{ comandasFiltradas.length === 1 ? 'comanda' : 'comandas' }}</span>
+        }
+      </h2>
+      @if (comandasFiltradas.length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <p class="empty-title">Nenhuma comanda fechada</p>
+          <p class="empty-desc">{{ filtroTipoProduto !== 'TODOS' ? 'Nenhuma comanda do tipo selecionado no período.' : 'As comandas fechadas aparecerão aqui.' }}</p>
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Tipo</th>
+                <th>Identificador</th>
+                <th class="th-total">Total</th>
+                <th>Pagamento</th>
+                <th>Abriu</th>
+                <th>Fechou</th>
+                <th>Abertura</th>
+                <th>Fechamento</th>
+                <th class="th-acoes no-print"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of comandasFiltradas; track c.id) {
+                <tr>
+                  <td class="td-id">{{ c.id }}</td>
+                  <td><span class="badge" [attr.data-tipo]="c.tipo">{{ labelTipo(c.tipo) }}</span></td>
+                  <td class="td-identificador">{{ c.identificador }}</td>
+                  <td class="td-total">R$ {{ c.valorTotal | number : '1.2-2' }}</td>
+                  <td><span class="forma-badge">{{ labelForma(c.formaPagamento) }}</span></td>
+                  <td class="td-user">{{ c.openedByUsername || '—' }}</td>
+                  <td class="td-user">{{ c.closedByUsername || '—' }}</td>
+                  <td class="td-date">{{ formatarData(c.dataHora) }}</td>
+                  <td class="td-date">{{ formatarData(c.dataFechamento) }}</td>
+                  <td class="td-acoes no-print">
+                    <button type="button" class="btn btn-ver-detalhes" (click)="abrirDetalhe(c)">Ver detalhes</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+
+  @if (comandaDetalhe) {
+    <div class="modal-overlay" (click)="fecharDetalhe()">
+      <div class="modal modal-detalhe" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Detalhes da comanda #{{ comandaDetalhe.id }}</h3>
+          <button type="button" class="modal-fechar" (click)="fecharDetalhe()" aria-label="Fechar">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="detalhe-tipo">{{ labelTipo(comandaDetalhe.tipo) }} {{ comandaDetalhe.identificador }}</p>
+          @if (itensDetalhe.length > 0) {
+            <table class="table-detalhe">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Tipo</th>
+                  <th>Peso / Quantidade</th>
+                  <th>Preço (unit.)</th>
+                  <th class="th-total">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of itensDetalhe; track item.id) {
+                  <tr>
+                    <td>{{ $index + 1 }}</td>
+                    <td><span class="badge-tipo-produto" [attr.data-tipo-produto]="item.tipoProduto">{{ labelTipoProduto(item.tipoProduto) }}</span></td>
+                    <td>@if (item.tipoProduto === 'PRECO_FIXO') { {{ item.quantidade }} un } @else { {{ item.pesoKg | number : '1.3-3' }} kg }</td>
+                    <td>@if (item.tipoProduto === 'PRECO_FIXO') { R$ {{ item.precoUnitario | number : '1.2-2' }} } @else { R$ {{ item.precoUnitario | number : '1.2-2' }}/kg }</td>
+                    <td class="td-total">R$ {{ item.valorTotal | number : '1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          } @else {
+            <p class="detalhe-sem-itens">Sem detalhamento de itens (comanda antiga). Total: R$ {{ comandaDetalhe.valorTotal | number : '1.2-2' }}</p>
+          }
+          <dl class="detalhe-meta">
+            <dt>Total da comanda</dt>
+            <dd class="detalhe-total">R$ {{ comandaDetalhe.valorTotal | number : '1.2-2' }}</dd>
+            <dt>Forma de pagamento</dt>
+            <dd>{{ labelForma(comandaDetalhe.formaPagamento) }}</dd>
+            <dt>Abriu</dt>
+            <dd>{{ comandaDetalhe.openedByUsername || '—' }}</dd>
+            <dt>Fechou</dt>
+            <dd>{{ comandaDetalhe.closedByUsername || '—' }}</dd>
+            <dt>Abertura</dt>
+            <dd>{{ formatarData(comandaDetalhe.dataHora) }}</dd>
+            <dt>Fechamento</dt>
+            <dd>{{ formatarData(comandaDetalhe.dataFechamento) }}</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  }
+</div>

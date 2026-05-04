@@ -1,0 +1,323 @@
+:root {
+  --bg-base: #1a1d21;
+  --bg-elevated: #22262c;
+  --bg-hover: #2a2f36;
+  --bg-card: #272c33;
+  --border: #353b44;
+  --text: #f2f4f7;
+  --muted: #9aa3ad;
+  --accent: #e63900;
+  --accent-hover: #ff4d1a;
+  --ok: #3ddc84;
+  --warn: #ff6b6b;
+  --radius: 10px;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--font);
+  background: var(--bg-base);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  -webkit-tap-highlight-color: rgba(230, 57, 0, 0.12);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  padding: 0.65rem 1.1rem;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.15s, transform 0.08s;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-ghost:hover {
+  background: var(--bg-hover);
+}
+
+.btn-outline {
+  border: 1px solid var(--accent);
+  color: #ffb399;
+  background: transparent;
+}
+
+.btn-outline:hover {
+  background: rgba(230, 57, 0, 0.15);
+}
+
+.btn-outline-warn {
+  border: 1px solid rgba(255, 107, 107, 0.55);
+  color: #ffc9c9;
+  background: transparent;
+}
+
+.btn-outline-warn:hover:not(:disabled) {
+  background: rgba(255, 107, 107, 0.12);
+}
+
+.btn-outline-warn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.9rem;
+}
+
+.field label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.field input,
+.field select,
+.field textarea {
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  color: var(--text);
+}
+
+// Força o input de data a usar esquema de cores escuro e pinta o ícone
+// do calendário com o vermelho do sistema
+input[type='date'],
+input[type='datetime-local'],
+input[type='time'] {
+  color-scheme: dark;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='datetime-local']::-webkit-calendar-picker-indicator,
+input[type='time']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px;
+  opacity: 0.85;
+  // Converte o ícone preto para ~#e63900 (accent)
+  filter: invert(35%) sepia(95%) saturate(3000%) hue-rotate(8deg) brightness(100%) contrast(110%);
+  transition: opacity 0.15s;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator:hover,
+input[type='datetime-local']::-webkit-calendar-picker-indicator:hover,
+input[type='time']::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.field textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 1rem 0;
+}
+
+.tabs button {
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .tabs button {
+    min-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+.tabs button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(230, 57, 0, 0.1);
+}
+
+.grid-mesax {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 0.65rem;
+}
+
+@media (max-width: 380px) {
+  .grid-mesax {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .card-mesa {
+    min-height: 88px;
+    padding: 0.65rem 0.4rem;
+  }
+
+  .card-mesa .num {
+    font-size: 1.2rem;
+  }
+}
+
+.card-mesa {
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.card-mesa:hover {
+  border-color: #4a5360;
+}
+
+.card-mesa .num {
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.card-mesa .st {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.card-mesa.livre .emoji {
+  color: var(--ok);
+}
+
+.card-mesa.ocupada .emoji {
+  color: var(--warn);
+}
+
+.card-mesa.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(230, 57, 0, 0.25);
+}
+
+.drawer {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(400px, 100vw);
+  background: var(--bg-elevated);
+  border-left: 1px solid var(--border);
+  z-index: 20;
+  padding: 1.25rem;
+  overflow-y: auto;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 900px) {
+  .drawer {
+    left: 0;
+    right: 0;
+    top: auto;
+    width: 100%;
+    height: min(88vh, 640px);
+    border-radius: 16px 16px 0 0;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.drawer h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.drawer .mesa-id {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+}
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 19;
+}
+
+h1.page-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+}
+
+.subtle {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+}

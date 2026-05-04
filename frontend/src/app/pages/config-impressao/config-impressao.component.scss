@@ -1,0 +1,12 @@
+.fila-lista {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.fila-lista li {
+  margin: 0;
+}

@@ -1,0 +1,133 @@
+<div class="configuracao-page">
+  <header class="configuracao-header">
+    <div class="header-text">
+      <a routerLink="/gestao" class="back-link">← Gestão</a>
+      <h1 class="page-title">Configuração</h1>
+      <p class="page-subtitle">Preço do kilo para venda por peso e configuração da balança (conexão e dados em tempo real).</p>
+    </div>
+  </header>
+
+  @if (errorPermissao) {
+    <div class="message error">
+      <strong>Sem permissão.</strong> Você não tem acesso ao módulo de Gestão.
+    </div>
+  }
+
+  <section class="config-section">
+    <div class="card form-card">
+      <h2 class="form-title">Preço do kilo</h2>
+      <p class="form-desc">Valor usado na comanda para lançamento por peso (açaí/sorvete).</p>
+      @if (loadingPreco) {
+        <p class="loading">Carregando...</p>
+      } @else {
+        @if (errorPreco) {
+          <div class="message error">{{ errorPreco }}</div>
+        }
+        @if (sucessoPreco) {
+          <div class="message success">{{ sucessoPreco }}</div>
+        }
+        <form (ngSubmit)="salvarPreco()" class="config-form">
+          <div class="form-group">
+            <label for="precoKg">Preço do kilo (R$)</label>
+            <input
+              id="precoKg"
+              type="number"
+              step="0.01"
+              min="0"
+              [(ngModel)]="precoPorKilo"
+              name="precoPorKilo"
+              class="input"
+              placeholder="0,00"
+            />
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="salvandoPreco">
+              {{ salvandoPreco ? 'Salvando...' : 'Salvar' }}
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+  </section>
+
+  <section class="config-section balanca-section-wrap">
+    <div class="card form-card">
+      <h2 class="form-title">Balança</h2>
+      <p class="form-desc">Conecte a balança Toledo (serial → USB) e confira os dados recebidos. A configuração é salva automaticamente ao conectar.</p>
+
+      <p class="balanca-model-ref">Toledo <strong>PRIX 3 FIT/19</strong>: no menu (MODO → senha <strong>2011</strong> → MODO) defina <strong>C-13 = SERIAL</strong>, <strong>C-14</strong> = Prt1, Prt2, Prt3 ou Pr351 e <strong>C-15</strong> = mesma velocidade (2400, 4800 ou 9600) que escolher abaixo.</p>
+      <p class="balanca-model-ref"><strong>Envio ao estabilizar:</strong> com <strong>PRT2</strong>, ative o parâmetro <strong>C-16</strong> (transmissão contínua) na balança.</p>
+
+      @if (balancaService.serialDisponivel) {
+        @if (loadingBalanca) {
+          <p class="loading">Carregando configuração...</p>
+        } @else {
+          @if (errorBalanca && !errorPermissao) {
+            <div class="message error">{{ errorBalanca }}</div>
+          }
+          @if (sucessoBalanca) {
+            <div class="message success">{{ sucessoBalanca }}</div>
+          }
+
+          @if (balancaStatus() === 'desconectada' || balancaStatus() === 'erro') {
+            <div class="balanca-actions">
+              <label for="balanca-baud" class="balanca-baud-label">Velocidade (baud)</label>
+              <select id="balanca-baud" class="input balanca-baud-select" [(ngModel)]="balancaBaudRate">
+                @for (br of balancaBaudRates; track br) {
+                  <option [value]="br">{{ br }}</option>
+                }
+              </select>
+              <label for="balanca-serial-config" class="balanca-baud-label">Serial</label>
+              <select id="balanca-serial-config" class="input balanca-baud-select" [(ngModel)]="balancaSerialConfig">
+                <option value="8n1">8N1 (padrão)</option>
+                <option value="8e2">8E2 (Toledo)</option>
+              </select>
+              <label class="balanca-check-label">
+                <input type="checkbox" [(ngModel)]="balancaEnviarEnq" />
+                Enviar ENQ
+              </label>
+              <button type="button" class="btn btn-primary btn-sm" (click)="conectarBalanca()" [disabled]="balancaConectando()">
+                {{ balancaConectando() ? 'Conectando...' : 'Conectar balança (USB/Serial)' }}
+              </button>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-outline" (click)="salvarConfigBalanca()" [disabled]="salvandoBalanca">
+                {{ salvandoBalanca ? 'Salvando...' : 'Salvar apenas configuração' }}
+              </button>
+            </div>
+          }
+
+          @if (balancaStatus() === 'conectada' && balancaModo() === 'serial') {
+            <div class="balanca-conectada">
+              <span class="balanca-badge">Balança conectada</span>
+              <button type="button" class="btn btn-outline btn-sm" (click)="desconectarBalanca()">Desconectar</button>
+            </div>
+            @if (balancaInfoSerial(); as info) {
+              <div class="balanca-info-serial" aria-live="polite">
+                <p class="balanca-info-line">
+                  <span>Dados recebidos: <strong>{{ info.bytesRecebidos }} bytes</strong></span>
+                  <span>Leituras com peso: <strong>{{ info.leiturasComPeso }}</strong></span>
+                  @if (info.ultimaLeituraKg != null) {
+                    <span>Último peso: <strong>{{ info.ultimaLeituraKg | number : '1.3-3' }} kg</strong></span>
+                  }
+                  <span>Aguardando há <strong>{{ info.segundosAguardando }} s</strong></span>
+                </p>
+                @if (info.ultimosBytesHex) {
+                  <p class="balanca-info-hex">Últimos bytes (hex): <code>{{ info.ultimosBytesHex }}</code></p>
+                } @else if (info.bytesRecebidos === 0) {
+                  <p class="balanca-info-hint">Nenhum byte recebido — coloque peso e estabilize (ou pressione IMPRIMIR na balança).</p>
+                }
+              </div>
+            }
+          }
+        }
+
+        @if (balancaErro()) {
+          <p class="message error balanca-err">{{ balancaErro() }}</p>
+        }
+      } @else {
+        <p class="balanca-hint">Use Chrome ou Edge em <strong>HTTPS</strong> para conectar uma balança real.</p>
+      }
+    </div>
+  </section>
+</div>

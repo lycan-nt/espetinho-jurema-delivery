@@ -1,0 +1,16 @@
+.DS_Store
+.idea/
+*.iml
+
+# Backend
+backend/target/
+backend/data/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Pacote de instalacao — JAR gerado pelo deploy/build-pacote.*
+deploy/instalar/app/*.jar
+deploy/instalar-8081/app/*.jar

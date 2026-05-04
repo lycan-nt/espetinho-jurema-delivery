@@ -1,0 +1,42 @@
+========================================
+  COMO RESTAURAR O BACKUP DO BANCO
+========================================
+
+Use ao reinstalar o sistema ou trocar de maquina e quiser voltar
+os dados a partir de um arquivo de backup gerado pelo sistema.
+
+----------------------------------------
+1. ONDE FICAM OS BACKUPS
+----------------------------------------
+Pastas configuradas em application.yml / application.properties:
+  app.backup.directory (padrao: ./data/backups)
+
+Nome dos arquivos (exemplo):
+  espetinho-backup-2026-03-31T03-00-00Z.zip
+
+----------------------------------------
+2. ANTES DE RESTAURAR
+----------------------------------------
+- PARE a aplicacao (feche start.bat ou pare o servico Windows).
+- Tenha o caminho completo do arquivo .zip.
+
+----------------------------------------
+3. RESTAURAR (Windows)
+----------------------------------------
+1) Prompt de comando (cmd).
+
+2) Va ate a pasta INSTALAR (onde esta start.bat e a pasta data).
+   Exemplo:  cd C:\EspetinhoJurema\instalar
+
+3) Execute (aspas no caminho do zip):
+   restaurar-backup.bat "D:\backups\espetinho-backup-....zip"
+
+4) Inicie de novo com start.bat ou o servico.
+
+----------------------------------------
+4. EXEMPLO
+----------------------------------------
+  cd C:\EspetinhoJurema\instalar
+  restaurar-backup.bat "C:\Users\...\Downloads\espetinho-backup-....zip"
+
+========================================

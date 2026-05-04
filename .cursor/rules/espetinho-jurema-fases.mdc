@@ -1,0 +1,32 @@
+---
+description: Plano em fases — mesas, alertas mobile→PC, comanda, estoque opcional, financeiro leve (consulte contexto/PLANO-VENDAS-MESAS-E-FLUXO.md)
+alwaysApply: true
+---
+
+# Implementação por fases — Espetinho Jurema
+
+Antes de codar, leia **`contexto/PLANO-VENDAS-MESAS-E-FLUXO.md`** (fonte da verdade do escopo atual).
+
+## Ordem obrigatória das fases
+
+1. **Fase A** — Usuários, perfis (`ATENDIMENTO`, `GARCOM`, `CHURRASQUEIRO`), auth + guards (API + Angular).
+2. **Fase B** — Ocultar Delivery e Balcão na UI (e rotas se aplicável).
+3. **Fase C** — Venda por mesa completa (referência imagens): itens, observações, pagamento (formas, parcial, troco).
+4. **Fase D** — WebSocket: evento abertura/início mesa no mobile → alerta no PC (perfil atendimento) → OK → impressão comanda cozinha.
+5. **Fase E** — Estoque: flag “obrigatório ou não”; tela de entrada; validação na venda se obrigatório.
+6. **Fase F** — Dashboard (lucro quando houver custo, totais por forma de pagamento) + relatório por período + imprimir.
+7. **Fase G** — Polimento mobile-first e docs *(concluída — ver `contexto/PLANO-VENDAS-MESAS-E-FLUXO.md` §8 e §8.1 pós-MVP)*.
+
+## Regras de escopo
+
+- **Não** implementar delivery nem balcão neste ciclo (ocultos).
+- **Não** contas a pagar/receber.
+- **Dashboard “lucro”** = por ora **receita (valor vendido)**; margem com custo = evolução futura (ver plano).
+- **Pedidos** no padrão das imagens, **no contexto da mesa** (lista/controle com nexo mesa).
+- **Estoque:** entrada → saída na venda; se **obrigatório** ligado, bloquear ao esgotar; se desligado, permitir negativo; oferecer **ajuste/zerar** saldo para reorganizar.
+- Foco **churrascaria**: atendimento no PC reage a mobile; comanda após **OK**.
+
+## Ao trabalhar em cada fase
+
+- Alterar apenas o necessário; seguir arquitetura limpa/hexagonal no back e boas práticas UI no front.
+- Ao concluir uma fase, atualizar `contexto/PLANO-VENDAS-MESAS-E-FLUXO.md` se o comportamento real divergir do plano.

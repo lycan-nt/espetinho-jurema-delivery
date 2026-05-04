@@ -1,0 +1,22 @@
+---
+description: Regras do projeto Espetinho Jurema — arquitetura, mobile-first e referência em contexto/
+alwaysApply: true
+---
+
+# Espetinho Jurema — regras ativas
+
+Leia e siga o documento completo: **`contexto/REGRAS-PROJETO.md`**.
+
+## Resumo obrigatório
+
+- **Referência:** telas do sistema legado estão em **`contexto/`** (imagens). Use-as como guia de fluxo e UI; priorize **mobile-first** e UX se houver conflito com cópia literal.
+- **Front (Angular):** SPA no **navegador** (desktop e celular), responsiva, toques confortáveis, feedback de loading/erro, lazy routes quando fizer sentido.
+- **Back (Spring):** **Arquitetura limpa + hexagonal** — domínio sem framework; portas na aplicação; adaptadores em `infrastructure`; API REST versionada e previsível.
+- **Código:** **Clean Code** e **SOLID**; dependências apontam para dentro (domínio ← aplicação ← infra/API).
+- **Stack:** manter alinhamento com `README.md`, `backend/PROJETO.md`, `frontend/PROJETO.md`.
+
+## Ao implementar
+
+1. Conferir se a mudança respeita portas/adaptadores no back e estrutura de features no front.
+2. Validar comportamento em **largura estreita** (celular) antes de considerar pronto.
+3. Não expandir escopo (NF-e, pagamentos, etc.) sem atualizar `contexto/REGRAS-PROJETO.md` ou documentação equivalente.

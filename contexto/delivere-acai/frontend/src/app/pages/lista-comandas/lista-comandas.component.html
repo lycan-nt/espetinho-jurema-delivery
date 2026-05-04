@@ -1,0 +1,120 @@
+<div class="page list-page">
+  <h1 class="page-title">Comandas</h1>
+  <p class="page-subtitle">Visualize e feche comandas. O valor é calculado por peso × preço por kilo.</p>
+  <p class="atalhos-resumo" title="Ao fechar uma comanda: teclas 1–4 escolhem a forma de pagamento">
+    <span class="atalhos-icon" aria-hidden="true">⌨</span>
+    <span>Fechar comanda: <kbd>1</kbd> PIX, <kbd>2</kbd> Dinheiro, <kbd>3</kbd> Cartão crédito, <kbd>4</kbd> Cartão débito · <kbd>Enter</kbd> confirmar · <kbd>Esc</kbd> cancelar</span>
+  </p>
+
+  <div class="toolbar">
+    <button type="button" class="btn btn-outline" (click)="toggleFiltro()">
+      {{ apenasAbertas ? 'Ver todas' : 'Somente abertas' }}
+    </button>
+    <button type="button" class="btn btn-outline" (click)="carregar()">Atualizar</button>
+  </div>
+
+  @if (error) {
+    <div class="message error">{{ error }}</div>
+  }
+  @if (nfceError) {
+    <div class="message error">{{ nfceError }}</div>
+  }
+
+  @if (loading) {
+    <div class="loading">Carregando comandas...</div>
+  } @else if (comandas.length === 0) {
+    <div class="empty">
+      <p>Nenhuma comanda encontrada.</p>
+      <a routerLink="/comanda" class="btn btn-primary">Nova comanda</a>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tipo</th>
+            <th>Identificador</th>
+            <th>Peso (kg)</th>
+            <th>Preço/kg</th>
+            <th>Total</th>
+            <th>Data/Hora</th>
+            <th>Abriu</th>
+            <th>Fechou</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of comandas; track c.id) {
+            <tr
+              [class.fechada]="c.status === 'FECHADA'"
+              [class.clickable]="c.status === 'ABERTA'"
+              (click)="c.status === 'ABERTA' && continuarComanda(c)"
+            >
+              <td>{{ c.id }}</td>
+              <td><span class="badge" [attr.data-tipo]="c.tipo">{{ labelTipo(c.tipo) }}</span></td>
+              <td>{{ c.identificador }}</td>
+              <td>{{ c.pesoKg | number : '1.3-3' }}</td>
+              <td>R$ {{ c.precoPorKilo | number : '1.2-2' }}</td>
+              <td class="total">R$ {{ c.valorTotal | number : '1.2-2' }}</td>
+              <td>{{ formatarData(c.dataHora) }}</td>
+              <td class="td-user">{{ c.openedByUsername || '—' }}</td>
+              <td class="td-user">{{ c.closedByUsername || '—' }}</td>
+              <td><span class="status" [attr.data-status]="c.status">{{ c.status }}</span></td>
+              <td class="acoes">
+                @if (c.status === 'ABERTA') {
+                  <button type="button" class="btn btn-sm" (click)="abrirModalFechar(c); $event.stopPropagation()">Fechar</button>
+                } @else {
+                  @if (c.formaPagamento) {
+                    <span class="forma-pagamento">{{ labelFormaPagamento(c.formaPagamento) }}</span>
+                  }
+                  @if (c.chaveNfce) {
+                    <span class="nfce-emitida" title="Chave: {{ c.chaveNfce }}">NFC-e emitida</span>
+                  } @else if (emittingNfceId === c.id) {
+                    <span class="nfce-loading">Emitindo...</span>
+                  } @else {
+                    <button type="button" class="btn btn-sm btn-nfce" (click)="emitirNfce(c)">
+                      Emitir NFC-e
+                    </button>
+                  }
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (comandaParaFechar) {
+    <div class="modal-overlay" (click)="cancelarFechar()">
+      <div class="modal modal-fechar" (click)="$event.stopPropagation()">
+        <h3>Fechar comanda #{{ comandaParaFechar.id }}</h3>
+        <p>Total: R$ {{ comandaParaFechar.valorTotal | number : '1.2-2' }}</p>
+        <div class="form-group form-group-forma">
+          <label for="forma">Forma de pagamento</label>
+          <span class="shortcut-hint" title="Atalhos: 1=PIX, 2=Dinheiro, 3=Cartão crédito, 4=Cartão débito" aria-label="Atalhos de teclado">⌨</span>
+          <select id="forma" [(ngModel)]="formaPagamentoSelecionada" (ngModelChange)="onFormaPagamentoChange()" class="input">
+            @for (f of formasPagamento; track f.value) {
+              <option [value]="f.value">{{ f.label }}</option>
+            }
+          </select>
+          <div class="forma-atalhos">
+            @for (f of formasPagamento; track f.value; let i = $index) {
+              <span class="forma-atalho" [class.active]="formaPagamentoSelecionada === f.value" title="Tecla {{ i + 1 }}">{{ i + 1 }} {{ f.label }}</span>
+            }
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline btn-with-shortcut" (click)="cancelarFechar()" title="Atalho: Esc">
+            Cancelar <span class="shortcut-badge shortcut-sm" title="Pressione Esc">Esc</span>
+          </button>
+          <button type="button" class="btn btn-primary btn-with-shortcut" (click)="confirmarFechar()" [disabled]="fechando" title="Atalho: Enter">
+            {{ fechando ? 'Fechando...' : 'Confirmar' }} <span class="shortcut-badge shortcut-sm" title="Pressione Enter">↵</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

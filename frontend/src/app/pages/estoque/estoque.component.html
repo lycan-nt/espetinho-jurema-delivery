@@ -1,0 +1,99 @@
+<h1 class="page-title">Estoque</h1>
+<p class="subtle">Entradas, ajuste de saldo e bloqueio por falta de estoque nas vendas.</p>
+
+@if (carregando) {
+  <p class="subtle">Carregando…</p>
+} @else {
+  <div class="panel">
+    <h2>Configuração</h2>
+    <p class="hint">
+      Com <strong>estoque obrigatório</strong>, o sistema impede lançar item se não houver saldo suficiente. Desligado,
+      permite vender mesmo com saldo negativo (organize depois com ajuste).
+    </p>
+    <label class="row-toggle">
+      <input
+        type="checkbox"
+        name="obr"
+        [ngModel]="estoqueObrigatorio"
+        [disabled]="salvandoConfig"
+        (ngModelChange)="onObrigatorioChange($event)"
+      />
+      <span>Estoque obrigatório nas vendas</span>
+    </label>
+  </div>
+
+  @if (erro) {
+    <p class="err">{{ erro }}</p>
+  }
+
+  <div class="panel">
+    <h2>Registrar entrada</h2>
+    <div class="row">
+      <div class="field">
+        <label for="pe">Produto</label>
+        <select id="pe" name="pe" [(ngModel)]="produtoEntradaId">
+          @for (p of produtos; track p.id) {
+            <option [ngValue]="p.id">{{ p.nome }} — saldo {{ p.saldoEstoque ?? 0 }}</option>
+          }
+        </select>
+      </div>
+      <div class="field w-sm">
+        <label for="qe">Qtd</label>
+        <input id="qe" type="number" min="1" [(ngModel)]="qtdEntrada" name="qe" />
+      </div>
+      <div class="field grow">
+        <label for="re">Ref. / nota (opcional)</label>
+        <input id="re" [(ngModel)]="refEntrada" name="re" placeholder="Ex.: NF 12345" />
+      </div>
+    </div>
+    <button type="button" class="btn btn-primary" [disabled]="salvandoEntrada" (click)="registrarEntrada()">
+      {{ salvandoEntrada ? 'Salvando…' : 'Registrar entrada' }}
+    </button>
+  </div>
+
+  <div class="panel">
+    <h2>Ajustar saldo</h2>
+    <p class="hint">Define o saldo exato do produto (correção, inventário, zerar).</p>
+    <div class="row">
+      <div class="field">
+        <label for="pa">Produto</label>
+        <select id="pa" name="pa" [(ngModel)]="produtoAjusteId" (change)="onSelectAjuste()">
+          @for (p of produtos; track p.id) {
+            <option [ngValue]="p.id">{{ p.nome }}</option>
+          }
+        </select>
+      </div>
+      <div class="field w-sm">
+        <label for="ns">Novo saldo</label>
+        <input id="ns" type="number" [(ngModel)]="novoSaldo" name="ns" />
+      </div>
+    </div>
+    <button type="button" class="btn btn-primary" [disabled]="salvandoAjuste" (click)="aplicarAjuste()">
+      {{ salvandoAjuste ? 'Aplicando…' : 'Aplicar ajuste' }}
+    </button>
+  </div>
+
+  <div class="panel">
+    <h2>Saldo por produto</h2>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th class="num">Saldo</th>
+            <th class="num">Preço</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of produtos; track p.id) {
+            <tr>
+              <td>{{ p.nome }}</td>
+              <td class="num">{{ p.saldoEstoque ?? 0 }}</td>
+              <td class="num">{{ p.preco | number : '1.2-2' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

@@ -1,0 +1,276 @@
+<div class="pedido-topbar">
+  <button type="button" class="btn btn-ghost back" (click)="voltar()">{{ tituloVoltar() }}</button>
+  @if (pedido) {
+    <button type="button" class="btn btn-acoes-pedido" (click)="abrirPanelAcoes()">Ações do pedido</button>
+  }
+</div>
+
+@if (pedido) {
+  <h1 class="page-title">Pedido #{{ pedido.id }}</h1>
+  <p class="subtle resumo-pedido">
+    {{ pedido.tipo }} · {{ pedido.status }}
+    @if (pedido.mesaNumero) {
+      · Mesa {{ pedido.mesaNumero }}
+    }
+    · Total {{ pedido.total | number : '1.2-2' }}
+    @if (podeVerPagamentoCaixa() && pedido.total > 0) {
+      · Pago {{ (pedido.totalPago ?? 0) | number : '1.2-2' }} · Restante
+      {{ (pedido.restante ?? pedido.total) | number : '1.2-2' }}
+    }
+  </p>
+
+  @if (pedido.status !== 'PAGO' && pedido.status !== 'CANCELADO') {
+    <div class="add-box add-box--destaque">
+      <h3>Adicionar item</h3>
+      <div class="row">
+        <div class="field">
+          <label>Produto</label>
+          <select [(ngModel)]="produtoId" name="prod">
+            @for (pr of produtos; track pr.id) {
+              <option [ngValue]="pr.id">
+                {{ pr.nome }} — {{ pr.preco | number : '1.2-2' }}
+                @if (pr.saldoEstoque != null) {
+                  · est. {{ pr.saldoEstoque }}
+                }
+              </option>
+            }
+          </select>
+        </div>
+        <div class="field w-qty">
+          <label>Qtd</label>
+          <input type="number" min="1" [(ngModel)]="quantidade" name="qtd" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Observação</label>
+        <input [(ngModel)]="observacao" name="obs" />
+      </div>
+      @if (erroItem) {
+        <p class="err">{{ erroItem }}</p>
+      }
+      <button type="button" class="btn btn-primary" [disabled]="carregandoItem" (click)="adicionarItem()">Adicionar</button>
+    </div>
+  }
+
+  <div class="itens">
+    <h3>Itens</h3>
+    <ul>
+      @for (it of pedido.itens; track it.id) {
+        <li [class.item-cancelado]="it.cancelado === true">
+          <span class="q">{{ it.quantidade }}×</span>
+          <span class="n">{{ it.produtoNome }}</span>
+          <span class="v">{{ it.precoUnitario * it.quantidade | number : '1.2-2' }}</span>
+          @if (podeCancelarItemPedido(it)) {
+            <button
+              type="button"
+              class="btn btn-ghost sm btn-cancelar-item"
+              [disabled]="cancelandoItemId !== null"
+              (click)="cancelarItemPedido(it)"
+            >
+              {{ cancelandoItemId === it.id ? '…' : 'Cancelar item' }}
+            </button>
+          }
+          @if (it.observacao) {
+            <span class="o">{{ it.observacao }}</span>
+          }
+          @if (it.cancelado === true) {
+            <span class="o meta-cancelado">
+              Cancelado
+              @if (it.canceladoEm) {
+                · {{ formatarDataTransferenciaMesa(it.canceladoEm) }}
+              }
+              @if (it.canceladoPorLogin) {
+                · {{ it.canceladoPorLogin }}
+              }
+            </span>
+          }
+        </li>
+      }
+    </ul>
+  </div>
+
+  @if (
+    podeVerPagamentoCaixa() &&
+    restanteConta(pedido) > 0.005 &&
+    pedido.status !== 'PAGO' &&
+    pedido.status !== 'CANCELADO'
+  ) {
+    <div class="add-box pagamento-box">
+      <h3>Registrar pagamento</h3>
+      <p class="hint-pg">Parcial ou total. Em dinheiro, informe o valor recebido se houver troco.</p>
+      <div class="row">
+        <div class="field">
+          <label>Forma</label>
+          <select [(ngModel)]="formaPagamento" name="formaPg" (change)="onFormaChange()">
+            @for (f of formas; track f) {
+              <option [ngValue]="f">{{ rotuloForma[f] }}</option>
+            }
+          </select>
+        </div>
+        <div class="field w-valor">
+          <label>Valor (conta)</label>
+          <input type="number" min="0.01" step="0.01" [(ngModel)]="valorPagamento" name="valorPg" />
+        </div>
+        @if (formaPagamento === 'DINHEIRO') {
+          <div class="field w-valor">
+            <label>Recebido (espécie)</label>
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              [(ngModel)]="valorRecebidoDinheiro"
+              name="recebidoPg"
+              placeholder="Opcional — troco"
+            />
+          </div>
+        }
+      </div>
+      @if (erroPagamento) {
+        <p class="err">{{ erroPagamento }}</p>
+      }
+      <button type="button" class="btn btn-primary" [disabled]="carregandoPagamento" (click)="registrarPagamento()">
+        {{ carregandoPagamento ? 'Registrando…' : 'Registrar' }}
+      </button>
+    </div>
+  }
+
+  @if (podeVerPagamentoCaixa() && (pedido.pagamentos ?? []).length) {
+    <div class="pagamentos-lista">
+      <h3>Pagamentos</h3>
+      <ul>
+        @for (pg of pedido.pagamentos ?? []; track pg.id) {
+          <li>
+            <span class="forma">{{ rotuloForma[pg.forma] }}</span>
+            <span class="val">{{ pg.valor | number : '1.2-2' }}</span>
+            @if (pg.troco != null && pg.troco > 0) {
+              <span class="troco">Troco {{ pg.troco | number : '1.2-2' }}</span>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (podeEnviarComanda()) {
+    <div class="enviar-comanda-box">
+      <button
+        type="button"
+        class="btn btn-primary enviar-comanda-btn"
+        [disabled]="carregandoEnviarComanda"
+        (click)="enviarComanda()"
+      >
+        {{ carregandoEnviarComanda ? 'Enviando…' : 'Enviar comanda' }}
+      </button>
+      <p class="hint-ec">Envia o pedido ao atendimento (PC). Só então aparece o alerta para imprimir a comanda na cozinha.</p>
+    </div>
+  }
+
+  @if (panelAcoesAberto) {
+    <div class="acoes-pedido-backdrop" (click)="fecharPanelAcoes()"></div>
+    <aside class="acoes-pedido-panel" (click)="$event.stopPropagation()" aria-label="Ações do pedido">
+      <div class="acoes-pedido-panel-head">
+        <h2 class="acoes-pedido-panel-titulo">Ações do pedido</h2>
+        <button type="button" class="btn btn-ghost btn-fechar-painel" (click)="fecharPanelAcoes()">Fechar</button>
+      </div>
+      <div class="acoes-pedido-panel-scroll">
+        @if (erroPagamento) {
+          <p class="err err-painel-fundo">{{ erroPagamento }}</p>
+        }
+        <div class="acoes-pedido acoes-pedido--no-painel">
+          <div class="acoes-grupo">
+            <span class="acoes-label">Cozinha</span>
+            <div class="acoes-botoes">
+              <button
+                type="button"
+                class="btn btn-ghost acoes-chip"
+                (click)="mudarStatus('EM_PREPARO')"
+                [disabled]="pedido.status !== 'ABERTO'"
+              >
+                Preparo
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost acoes-chip"
+                (click)="mudarStatus('PRONTO')"
+                [disabled]="pedido.status === 'PAGO' || pedido.status === 'CANCELADO'"
+              >
+                Pronto
+              </button>
+            </div>
+          </div>
+          <div class="acoes-grupo">
+            <span class="acoes-label">Conta</span>
+            <div class="acoes-botoes acoes-botoes--conta">
+              @if (pedido.total === 0 && pedido.status !== 'PAGO' && pedido.status !== 'CANCELADO') {
+                <button type="button" class="btn btn-primary acoes-chip" (click)="mudarStatus('PAGO')">Encerrar sem valor</button>
+              }
+              <button
+                type="button"
+                class="btn btn-outline-warn acoes-chip"
+                (click)="mudarStatus('CANCELADO')"
+                [disabled]="pedido.status === 'PAGO' || pedido.status === 'CANCELADO'"
+              >
+                Cancelar pedido
+              </button>
+            </div>
+          </div>
+          <div class="acoes-grupo acoes-grupo--imprimir">
+            <span class="acoes-label">Imprimir</span>
+            <div class="acoes-botoes">
+              <button type="button" class="btn btn-ghost acoes-chip" (click)="imprimir(false)">Cupom</button>
+              <button type="button" class="btn btn-ghost acoes-chip" (click)="imprimir(true)">Ref. fiscal</button>
+            </div>
+          </div>
+        </div>
+
+        @if (podeTransferirMesa() || (pedido.tipo === 'MESA' && transferenciasMesa.length)) {
+          <div class="acoes-pedido-mesa-bloco">
+            @if (pedido.tipo === 'MESA' && transferenciasMesa.length) {
+              <h3 class="acoes-subtitulo">Histórico de transferências</h3>
+              <p class="hint-tm">Trocas registradas (origem → destino).</p>
+              <ul class="transfer-lista-painel">
+                @for (t of transferenciasMesa; track t.id) {
+                  <li>
+                    <span class="rota">Mesa {{ t.mesaOrigemNumero }} → mesa {{ t.mesaDestinoNumero }}</span>
+                    <span class="meta">{{ formatarDataTransferenciaMesa(t.criadoEm) }} · {{ t.usuarioLogin || '—' }}</span>
+                  </li>
+                }
+              </ul>
+            }
+            @if (podeTransferirMesa()) {
+              <h3 class="acoes-subtitulo" [class.com-margem]="pedido.tipo === 'MESA' && transferenciasMesa.length">
+                Transferir para outra mesa
+              </h3>
+              <p class="hint-tm">O pedido e os itens vão para a mesa escolhida; a mesa atual fica livre.</p>
+              @if (mesasParaTransferir.length) {
+                <div class="row">
+                  <div class="field field-grow">
+                    <label>Mesa destino</label>
+                    <select [(ngModel)]="mesaDestinoTransferirId" name="mesaDestinoPanel">
+                      @for (m of mesasParaTransferir; track m.id) {
+                        <option [ngValue]="m.id">Mesa {{ m.numero }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+                @if (erroTransferirMesa) {
+                  <p class="err">{{ erroTransferirMesa }}</p>
+                }
+                <button
+                  type="button"
+                  class="btn btn-primary btn-compacto"
+                  [disabled]="carregandoTransferirMesa || mesaDestinoTransferirId == null"
+                  (click)="transferirMesa()"
+                >
+                  {{ carregandoTransferirMesa ? 'Transferindo…' : 'Transferir' }}
+                </button>
+              } @else {
+                <p class="hint-tm muted">Não há outra mesa livre agora.</p>
+              }
+            }
+          </div>
+        }
+      </div>
+    </aside>
+  }
+}

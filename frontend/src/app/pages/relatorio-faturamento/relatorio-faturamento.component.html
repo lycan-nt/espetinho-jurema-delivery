@@ -1,0 +1,134 @@
+<div class="relatorio-page">
+  <h1 class="page-title">Relatório de faturamento</h1>
+  <p class="subtle">Receita por pagamentos registrados no período (parciais e totais) e pedidos encerrados.</p>
+
+  <div class="filtros no-print">
+    <div class="filtros-periodo">
+      <div class="field filtro-field">
+        <label for="d1">De</label>
+        <input id="d1" type="date" [(ngModel)]="dataInicio" name="d1" />
+      </div>
+      <div class="field filtro-field">
+        <label for="d2">Até</label>
+        <input id="d2" type="date" [(ngModel)]="dataFim" name="d2" />
+      </div>
+    </div>
+    <div class="filtros-acoes">
+      <button type="button" class="btn btn-primary btn-filtro" [disabled]="carregando" (click)="buscar()">
+        {{ carregando ? 'Carregando…' : 'Atualizar' }}
+      </button>
+      @if (resumo) {
+        <button type="button" class="btn btn-outline btn-filtro" (click)="imprimir()">Imprimir</button>
+      }
+    </div>
+  </div>
+
+@if (erro) {
+  <p class="err">{{ erro }}</p>
+}
+
+@if (resumo) {
+  <div id="relatorio-print" class="relatorio-print relatorio-corpo">
+    <p class="print-only titulo-print">Espetinho Jurema — Faturamento</p>
+    <p class="print-only periodo-print">Período: {{ dataInicio }} a {{ dataFim }}</p>
+
+    <div class="cards">
+      <div class="card destaque">
+        <span class="label">Receita (pagamentos)</span>
+        <span class="value">{{ resumo.receitaTotal | number : '1.2-2' }}</span>
+      </div>
+      <div class="card">
+        <span class="label">Pedidos encerrados (PAGO)</span>
+        <span class="value">{{ resumo.pedidosEncerradosNoPeriodo }}</span>
+      </div>
+    </div>
+
+    <div class="relatorio-corpo-inner">
+      <!-- Coluna 1: gráficos -->
+      <div>
+        <div class="graficos no-print">
+          <section class="grafico-card" aria-labelledby="grafico-formas-title">
+            <h2 id="grafico-formas-title" class="sec grafico-titulo">Formas de pagamento</h2>
+            <p class="grafico-hint subtle">Percentual e valor sobre o total pago no período (por data do pagamento).</p>
+            @if (temDadosForma()) {
+              <div class="chart-wrap">
+                <canvas #canvasForma aria-label="Gráfico pizza formas de pagamento"></canvas>
+              </div>
+            } @else {
+              <p class="subtle empty-chart">Sem pagamentos no período.</p>
+            }
+          </section>
+          <section class="grafico-card" aria-labelledby="grafico-produtos-title">
+            <h2 id="grafico-produtos-title" class="sec grafico-titulo">Vendas por produto</h2>
+            <p class="grafico-hint subtle">
+              Faturamento por item (quantidade × preço) em pedidos pagos encerrados no período. Até 10 produtos; o restante entra em
+              «Outros».
+            </p>
+            @if (temDadosProduto()) {
+              <div class="chart-wrap">
+                <canvas #canvasProduto aria-label="Gráfico pizza vendas por produto"></canvas>
+              </div>
+            } @else {
+              <p class="subtle empty-chart">Sem vendas em pedidos pagos neste período.</p>
+            }
+          </section>
+        </div>
+      </div>
+
+      <!-- Coluna 2: tabelas de detalhe -->
+      <div class="tabelas-section">
+        <div>
+          <h2 class="sec">Por forma de pagamento</h2>
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Forma</th>
+                  <th class="num">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of resumo.porForma; track row.forma) {
+                  <tr>
+                    <td>{{ rotuloForma[row.forma] }}</td>
+                    <td class="num">{{ row.total | number : '1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h2 class="sec">Por produto (detalhe)</h2>
+          <p class="subtle table-hint">Mesma base do gráfico: itens de pedidos pagos encerrados no período.</p>
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th class="num">%</th>
+                  <th class="num">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of produtosComVenda(); track row.produtoId) {
+                  <tr>
+                    <td>{{ row.produtoNome }}</td>
+                    <td class="num">{{ pctProduto(row.total) }}%</td>
+                    <td class="num">{{ row.total | number : '1.2-2' }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3" class="subtle">Nenhum produto vendido em pedidos pagos neste período.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+</div>

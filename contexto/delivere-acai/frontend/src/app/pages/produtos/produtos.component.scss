@@ -1,0 +1,145 @@
+.produtos-page {
+  max-width: 520px;
+  margin: 0 auto;
+  animation: fadeIn 0.35s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.produtos-header {
+  margin-bottom: 1.5rem;
+}
+
+.back-link {
+  display: inline-block;
+  font-size: 0.9rem;
+  color: var(--acai-600);
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+
+  &:hover {
+    color: var(--acai-700);
+    text-decoration: underline;
+  }
+}
+
+.page-title {
+  margin: 0 0 0.35rem 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--acai-800);
+}
+
+.page-subtitle {
+  margin: 0;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.form-section {
+  margin-top: 1rem;
+}
+
+.form-card {
+  padding: 1.5rem;
+}
+
+.form-title {
+  margin: 0 0 1rem 0;
+  font-size: 1.15rem;
+  color: var(--acai-800);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+
+  label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+    color: #333;
+  }
+}
+
+.input {
+  width: 100%;
+  max-width: 200px;
+  padding: 0.6rem 0.75rem;
+  font-size: 1rem;
+  border: 2px solid #e5e5e5;
+  border-radius: 8px;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: var(--acai-500);
+  }
+}
+
+.field-hint {
+  display: block;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.form-actions {
+  margin-top: 1.25rem;
+}
+
+.btn {
+  padding: 0.6rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.btn-primary {
+  background: var(--acai-600);
+  color: white;
+
+  &:hover:not(:disabled) {
+    background: var(--acai-500);
+  }
+}
+
+.loading {
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+}
+
+.message {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+
+  &.error {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+  }
+
+  &.success {
+    background: #f0fdf4;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+  }
+}

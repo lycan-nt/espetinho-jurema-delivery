@@ -1,0 +1,59 @@
+================================================================================
+MODELO DE POLÍTICA DE PRIVACIDADE — Mix Açaí Gestão (app mobile)
+Publique em uma página pública (Notion, Google Sites, site próprio) e use o URL
+na App Store Connect → Privacidade do app → URL da política de privacidade.
+Revise com seu advogado se necessário. Substitua os campos [ ].
+================================================================================
+
+Política de privacidade — [NOME DO APP / EMPRESA]
+
+Última atualização: [DATA]
+
+1. Quem somos
+[NOME FANTASIA], [CNPJ ou identificação], e-mail de contato: [EMAIL].
+
+2. Sobre o aplicativo
+O aplicativo é destinado a gestores e equipe autorizada das operações [Mix Açaí /
+sua rede], para consulta de informações de vendas e ferramentas operacionais
+conectadas ao sistema de gestão da empresa.
+
+3. Dados que podemos tratar
+• Dados de conta: identificador de usuário e senha (ou equivalente) para autenticação.
+• Dados operacionais exibidos no app: informações de vendas, lojas e relatórios
+  fornecidos pelo backend/serviços configurados pela gestão — conforme o que
+  estiver disponível para o seu perfil de acesso.
+• Dados técnicos mínimos: comunicação via internet com servidores (HTTPS),
+  podendo incluir registros operacionais em servidores da empresa ou de
+  prestadores contratados.
+
+4. Finalidade
+Operar o serviço de gestão, autenticar usuários, exibir relatórios e funcionalidades
+do app, cumprir obrigações legais e manter a segurança do sistema.
+
+5. Compartilhamento
+Não vendemos seus dados pessoais. O compartilhamento limita-se ao necessário para
+operar o sistema (por exemplo, infraestrutura em nuvem ou suporte técnico sob
+contrato), sempre em conformidade com a legislação aplicável.
+
+6. Retenção
+Os dados são mantidos pelo tempo necessário para as finalidades descritas e
+conforme políticas internas da empresa e obrigações legais.
+
+7. Seus direitos (LGPD)
+Você pode solicitar confirmação de tratamento, acesso, correção, anonimização,
+eliminação ou portabilidade dos dados pessoais, quando aplicável, e revogar
+consentimentos, mediante solicitação ao e-mail [EMAIL PRIVACIDADE / SUPORTE].
+
+8. Segurança
+Adotamos medidas razoáveis de segurança para proteger as informações. Nenhum
+sistema é totalmente isento de riscos.
+
+9. Alterações
+Podemos atualizar esta política. A data no topo indica a versão vigente.
+
+10. Contato
+Dúvidas: [EMAIL]
+
+================================================================================
+FIM — copie para sua página pública e publique em URL https://...
+================================================================================

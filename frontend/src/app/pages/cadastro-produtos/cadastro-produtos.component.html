@@ -1,0 +1,119 @@
+<h1 class="page-title">Produtos</h1>
+<p class="subtle">Cardápio: nome, preço, categoria e código de impressão. Estoque continua na tela Estoque.</p>
+
+@if (erro) {
+  <p class="err">{{ erro }}</p>
+}
+
+<div class="panel">
+  <h2>Novo produto</h2>
+  <div class="row">
+    <div class="field grow">
+      <label for="nn">Nome</label>
+      <input id="nn" name="nn" [(ngModel)]="novoNome" />
+    </div>
+    <div class="field grow">
+      <label for="nd">Descrição</label>
+      <input id="nd" name="nd" [(ngModel)]="novaDesc" />
+    </div>
+    <div class="field w-preco">
+      <label for="np">Preço</label>
+      <input id="np" name="np" type="number" step="0.01" min="0" [(ngModel)]="novoPreco" />
+    </div>
+    <div class="field w-cat">
+      <label for="nc">Categoria</label>
+      <select id="nc" name="nc" [(ngModel)]="novoCatId">
+        @for (c of categorias; track c.id) {
+          <option [ngValue]="c.id">{{ c.nome }}</option>
+        }
+      </select>
+    </div>
+    <div class="field w-cod">
+      <label for="nco">Cód. impressão</label>
+      <input id="nco" name="nco" [(ngModel)]="novoCod" placeholder="Opcional" />
+    </div>
+    <label class="field row-check">
+      <input type="checkbox" [(ngModel)]="novoAtivo" name="na" />
+      <span>Ativo</span>
+    </label>
+  </div>
+  <button type="button" class="btn btn-primary" [disabled]="salvandoNovo" (click)="criar()">
+    {{ salvandoNovo ? 'Salvando…' : 'Criar produto' }}
+  </button>
+</div>
+
+@if (editandoId !== null) {
+  <div class="panel panel-edit">
+    <h2>Editar produto #{{ editandoId }}</h2>
+    <div class="row">
+      <div class="field grow">
+        <label for="en">Nome</label>
+        <input id="en" name="en" [(ngModel)]="editNome" />
+      </div>
+      <div class="field grow">
+        <label for="ed">Descrição</label>
+        <input id="ed" name="ed" [(ngModel)]="editDesc" />
+      </div>
+      <div class="field w-preco">
+        <label for="ep">Preço</label>
+        <input id="ep" name="ep" type="number" step="0.01" min="0" [(ngModel)]="editPreco" />
+      </div>
+      <div class="field w-cat">
+        <label for="ec">Categoria</label>
+        <select id="ec" name="ec" [(ngModel)]="editCatId">
+          @for (c of categorias; track c.id) {
+            <option [ngValue]="c.id">{{ c.nome }}</option>
+          }
+        </select>
+      </div>
+      <div class="field w-cod">
+        <label for="eco">Cód. impressão</label>
+        <input id="eco" name="eco" [(ngModel)]="editCod" />
+      </div>
+      <label class="field row-check">
+        <input type="checkbox" [(ngModel)]="editAtivo" name="ea" />
+        <span>Ativo</span>
+      </label>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn btn-primary" [disabled]="salvandoEdit" (click)="salvarEdicao()">
+        {{ salvandoEdit ? 'Salvando…' : 'Salvar alterações' }}
+      </button>
+      <button type="button" class="btn btn-ghost" [disabled]="salvandoEdit" (click)="cancelarEdicao()">Cancelar</button>
+    </div>
+  </div>
+}
+
+<div class="panel">
+  <h2>Lista (todos)</h2>
+  @if (carregando) {
+    <p class="subtle">Carregando…</p>
+  } @else {
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Categoria</th>
+            <th class="num">Preço</th>
+            <th>Ativo</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of lista; track p.id) {
+            <tr [class.inactive]="!p.ativo">
+              <td>{{ p.nome }}</td>
+              <td>{{ p.categoriaNome ?? '—' }}</td>
+              <td class="num">{{ p.preco | number : '1.2-2' }}</td>
+              <td>{{ p.ativo ? 'Sim' : 'Não' }}</td>
+              <td>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="iniciarEdicao(p)">Editar</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

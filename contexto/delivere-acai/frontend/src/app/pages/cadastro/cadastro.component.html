@@ -1,0 +1,114 @@
+<div class="cadastro-page">
+  <header class="cadastro-header">
+    <div class="header-text">
+      <a routerLink="/gestao" class="back-link">← Gestão</a>
+      <h1 class="page-title">Cadastro de usuários</h1>
+      <p class="page-subtitle">Cadastre novos usuários com nome, senha e setor. Setor <strong>Gestão</strong> acessa o módulo de gestão; <strong>Vendas</strong> não.</p>
+    </div>
+  </header>
+
+  @if (errorPermissao) {
+    <div class="message error">
+      <strong>Sem permissão.</strong> Você não tem acesso ao módulo de Gestão.
+    </div>
+  }
+  @if (error && !errorPermissao) {
+    <div class="message error">{{ error }}</div>
+  }
+  @if (sucesso) {
+    <div class="message success">{{ sucesso }}</div>
+  }
+
+  <section class="form-section">
+    <div class="card form-card">
+      <h2 class="form-title">{{ editandoId ? 'Editar usuário' : 'Novo usuário' }}</h2>
+      <form (ngSubmit)="enviar()" class="cadastro-form">
+        <div class="form-group">
+          <label for="nome">Nome de usuário</label>
+          <input
+            id="nome"
+            type="text"
+            [(ngModel)]="nome"
+            name="nome"
+            class="input"
+            placeholder="Ex.: maria"
+            autocomplete="username"
+            maxlength="50"
+          />
+          <span class="field-hint">Será usado para fazer login (letras, números, ponto ou hífen).</span>
+        </div>
+        <div class="form-group">
+          <label for="senha">Senha</label>
+          <input
+            id="senha"
+            type="password"
+            [(ngModel)]="senha"
+            name="senha"
+            class="input"
+            [placeholder]="editandoId ? 'Deixe em branco para não alterar' : 'Mínimo 4 caracteres'"
+            autocomplete="new-password"
+          />
+        </div>
+        <div class="form-group">
+          <label for="setor">Setor</label>
+          <select id="setor" [(ngModel)]="setor" name="setor" class="input">
+            @for (s of setores; track s.value) {
+              <option [value]="s.value">{{ s.label }}</option>
+            }
+          </select>
+          <span class="field-hint">Gestão: acessa relatórios e este cadastro. Vendas: só comandas e caixa.</span>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="salvando">
+            {{ salvando ? 'Salvando...' : (editandoId ? 'Salvar' : 'Cadastrar') }}
+          </button>
+          @if (editandoId) {
+            <button type="button" class="btn btn-outline" (click)="cancelarEdicao()" [disabled]="salvando">Cancelar</button>
+          }
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="list-section">
+    <h2 class="section-title">Usuários cadastrados</h2>
+    @if (loading) {
+      <div class="loading-row">
+        <div class="spinner small"></div>
+        <span>Carregando...</span>
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table class="usuarios-table" aria-label="Lista de usuários">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Setor</th>
+              <th class="th-acoes">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (usuarios.length === 0) {
+              <tr>
+                <td colspan="3" class="empty">Nenhum usuário cadastrado.</td>
+              </tr>
+            } @else {
+              @for (u of usuarios; track u.id) {
+                <tr>
+                  <td>{{ u.username }}</td>
+                  <td><span class="badge" [class.badge-gestao]="u.setor === 'GESTAO'">{{ labelSetor(u.setor) }}</span></td>
+                  <td class="td-acoes">
+                    <button type="button" class="btn btn-sm btn-outline" (click)="editar(u)" [disabled]="excluindoId !== null" title="Editar">Editar</button>
+                    <button type="button" class="btn btn-sm btn-danger" (click)="excluir(u)" [disabled]="ehUsuarioLogado(u.username) || excluindoId === u.id" [title]="ehUsuarioLogado(u.username) ? 'Não é possível excluir seu próprio usuário' : 'Excluir'">
+                      {{ excluindoId === u.id ? 'Excluindo...' : 'Excluir' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

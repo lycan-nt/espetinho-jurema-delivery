@@ -1,0 +1,14 @@
+<service>
+  <id>DelivereAcai</id>
+  <name>Delivere Acai - Mix Açaí</name>
+  <description>Servidor da aplicação Delivere Acai (comandas e caixa). Inicia com o Windows.</description>
+  <executable>cmd</executable>
+  <arguments>/c &quot;%BASE%\start-servico.bat&quot;</arguments>
+  <logpath>%BASE%\logs</logpath>
+  <log mode="roll-by-time">
+    <pattern>yyyyMMdd</pattern>
+  </log>
+  <workingdirectory>%BASE%</workingdirectory>
+  <startmode>Automatic</startmode>
+  <delayedAutoStart>true</delayedAutoStart>
+</service>

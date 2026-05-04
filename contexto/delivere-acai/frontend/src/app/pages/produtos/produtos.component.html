@@ -1,0 +1,52 @@
+<div class="produtos-page">
+  <header class="produtos-header">
+    <div class="header-text">
+      <a routerLink="/gestao" class="back-link">← Gestão</a>
+      <h1 class="page-title">Produtos</h1>
+      <p class="page-subtitle">Configure o preço do kilo para venda por peso (açaí). Este valor será usado na tela de comanda.</p>
+    </div>
+  </header>
+
+  @if (errorPermissao) {
+    <div class="message error">
+      <strong>Sem permissão.</strong> Você não tem acesso ao módulo de Gestão.
+    </div>
+  }
+  @if (error && !errorPermissao) {
+    <div class="message error">{{ error }}</div>
+  }
+  @if (sucesso) {
+    <div class="message success">{{ sucesso }}</div>
+  }
+
+  @if (loading) {
+    <div class="loading">Carregando...</div>
+  } @else {
+    <section class="form-section">
+      <div class="card form-card">
+        <h2 class="form-title">Preço do kilo</h2>
+        <form (ngSubmit)="salvar()" class="produtos-form">
+          <div class="form-group">
+            <label for="precoKg">Preço do kilo (R$)</label>
+            <input
+              id="precoKg"
+              type="number"
+              step="0.01"
+              min="0"
+              [(ngModel)]="precoPorKilo"
+              name="precoPorKilo"
+              class="input"
+              placeholder="0,00"
+            />
+            <span class="field-hint">Valor usado no lançamento por peso na comanda.</span>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="salvando">
+              {{ salvando ? 'Salvando...' : 'Salvar' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  }
+</div>
