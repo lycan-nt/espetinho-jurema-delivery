@@ -179,6 +179,104 @@
   margin-bottom: 1.25rem;
 }
 
+.cardapio-add-block {
+  margin-bottom: 0.85rem;
+}
+
+.cardapio-toggle {
+  width: 100%;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  text-align: left;
+}
+
+.cardapio-chevron {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.cardapio-panel {
+  margin-top: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+
+.cardapio-hint-cat,
+.cardapio-hint-prod {
+  margin: 0 0 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.cardapio-hint-prod {
+  margin-top: 0.85rem;
+}
+
+.cardapio-cat-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.btn-cardapio-cat {
+  min-height: 2.5rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.btn-cardapio-cat:hover {
+  border-color: rgba(230, 57, 0, 0.45);
+}
+
+.btn-cardapio-cat:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.btn-cardapio-cat--on {
+  border-color: var(--accent);
+  background: rgba(230, 57, 0, 0.2);
+  color: #ffc9a8;
+}
+
+.cardapio-prod-field {
+  margin-top: 0.15rem;
+}
+
+.cardapio-prod-field select {
+  width: 100%;
+}
+
+.cardapio-placeholder {
+  margin: 0.35rem 0 0;
+  font-size: 0.84rem;
+}
+
+.cardapio-vazio {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
 .ponto-carne-dropdown {
   position: relative;
   margin-bottom: 0.85rem;

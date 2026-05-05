@@ -22,20 +22,71 @@
   @if (pedido.status !== 'PAGO' && pedido.status !== 'CANCELADO') {
     <div class="add-box add-box--destaque">
       <h3>Adicionar item</h3>
-      <div class="row">
-        <div class="field">
-          <label>Produto</label>
-          <select [(ngModel)]="produtoId" name="prod" (ngModelChange)="onProdutoIdChange()">
-            @for (pr of produtos; track pr.id) {
-              <option [ngValue]="pr.id">
-                {{ pr.nome }} — {{ pr.preco | number : '1.2-2' }}
-                @if (pr.saldoEstoque != null) {
-                  · est. {{ pr.saldoEstoque }}
+      <div class="cardapio-add-block">
+        <button
+          type="button"
+          class="btn btn-outline cardapio-toggle full-width-touch"
+          [attr.aria-expanded]="cardapioPickerAberto"
+          (click)="toggleCardapioPicker()"
+        >
+          <span>{{ rotuloBotaoCardapio() }}</span>
+          <span class="cardapio-chevron" aria-hidden="true">{{ cardapioPickerAberto ? '▴' : '▾' }}</span>
+        </button>
+
+        @if (cardapioPickerAberto) {
+          <div class="cardapio-panel">
+            @if (categoriasParaCardapio().length === 0) {
+              <p class="cardapio-vazio">Nenhuma categoria com produto disponível.</p>
+            } @else {
+              <p class="cardapio-hint-cat" id="hint-cat-cardapio">Categorias</p>
+              <div class="cardapio-cat-grid" role="group" aria-labelledby="hint-cat-cardapio">
+                @for (c of categoriasParaCardapio(); track c.id) {
+                  <button
+                    type="button"
+                    class="btn-cardapio-cat"
+                    [class.btn-cardapio-cat--on]="categoriaAtivaId === c.id"
+                    [attr.aria-pressed]="categoriaAtivaId === c.id"
+                    (click)="selecionarCategoriaCardapio(c.id)"
+                  >
+                    {{ c.nome }}
+                  </button>
                 }
-              </option>
+              </div>
+
+              @if (categoriaAtivaId != null) {
+                <p class="cardapio-hint-prod" id="hint-prod-cardapio">Produtos</p>
+                @if (produtosNaCategoria(categoriaAtivaId).length === 0) {
+                  <p class="cardapio-vazio">Nenhum produto nesta categoria.</p>
+                } @else {
+                  <div class="field cardapio-prod-field">
+                    <label for="prod-cardapio-select">Produto</label>
+                    <select
+                      id="prod-cardapio-select"
+                      name="prodCardapio"
+                      [(ngModel)]="produtoId"
+                      (ngModelChange)="onProdutoIdChange()"
+                    >
+                      <option [ngValue]="null" disabled>Escolha o produto…</option>
+                      @for (pr of produtosNaCategoria(categoriaAtivaId); track pr.id) {
+                        <option [ngValue]="pr.id">
+                          {{ pr.nome }} — {{ pr.preco | number : '1.2-2' }}
+                          @if (pr.saldoEstoque != null) {
+                            · est. {{ pr.saldoEstoque }}
+                          }
+                        </option>
+                      }
+                    </select>
+                  </div>
+                }
+              } @else if (categoriasParaCardapio().length > 1) {
+                <p class="cardapio-placeholder subtle">Toque em uma categoria para ver os produtos.</p>
+              }
             }
-          </select>
-        </div>
+          </div>
+        }
+      </div>
+
+      <div class="row">
         <div class="field w-qty">
           <label>Qtd</label>
           <input type="number" min="1" [(ngModel)]="quantidade" name="qtd" />

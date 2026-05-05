@@ -15,6 +15,7 @@ import { ApiBackendService } from '../../core/api-backend.service';
 import { AuthService } from '../../core/auth.service';
 import { RealtimeService } from '../../core/realtime.service';
 import {
+  CategoriaCardapio,
   FormaPagamento,
   ItemPedido,
   MesaComOcupacao,
@@ -33,6 +34,9 @@ const ROTULO_PONTO: Record<PontoCarne, string> = {
 
 /** Igual ao backend; produtos nesta categoria exigem ponto ao lançar. */
 const CATEGORIA_ESPETINHOS = 'Espetinhos';
+
+/** Produtos sem categoria ou com id órfão na lista de categorias. */
+const CAT_OUTROS_ID = -1;
 
 const OPCOES_PONTO_CARNE: { valor: PontoCarne; rotulo: string }[] = [
   { valor: 'MAL_PASSADA', rotulo: ROTULO_PONTO.MAL_PASSADA },
@@ -67,6 +71,10 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   pedidoId = 0;
   pedido: PedidoDetalhe | null = null;
   produtos: Produto[] = [];
+  categorias: CategoriaCardapio[] = [];
+  /** Painel “Cardápio”: categorias e produtos em botões (mobile-first). */
+  cardapioPickerAberto = false;
+  categoriaAtivaId: number | null = null;
   produtoId: number | null = null;
   quantidade = 1;
   observacao = '';
@@ -103,6 +111,74 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
 
   private produtoPorId(id: number | null): Produto | undefined {
     return id != null ? this.produtos.find((x) => x.id === id) : undefined;
+  }
+
+  private idsCategoriasCadastradas(): Set<number> {
+    return new Set(this.categorias.map((c) => c.id));
+  }
+
+  private produtoEstaAtivo(pr: Produto): boolean {
+    return pr.ativo !== false;
+  }
+
+  /** Produtos sem categoria ou categoria inexistente no cadastro. */
+  private temLinhaOutros(): boolean {
+    const ids = this.idsCategoriasCadastradas();
+    return this.produtos.some(
+      (p) => this.produtoEstaAtivo(p) && (p.categoriaId == null || !ids.has(p.categoriaId)),
+    );
+  }
+
+  produtosNaCategoria(catId: number): Produto[] {
+    const base = this.produtos.filter((p) => this.produtoEstaAtivo(p));
+    if (catId === CAT_OUTROS_ID) {
+      const ids = this.idsCategoriasCadastradas();
+      return base.filter((p) => p.categoriaId == null || !ids.has(p.categoriaId));
+    }
+    return base.filter((p) => p.categoriaId === catId);
+  }
+
+  categoriasParaCardapio(): { id: number; nome: string }[] {
+    const out: { id: number; nome: string }[] = [];
+    for (const c of [...this.categorias].sort((a, b) => a.ordem - b.ordem || a.id - b.id)) {
+      if (this.produtosNaCategoria(c.id).length > 0) {
+        out.push({ id: c.id, nome: c.nome });
+      }
+    }
+    if (this.temLinhaOutros()) {
+      out.push({ id: CAT_OUTROS_ID, nome: 'Outros' });
+    }
+    return out;
+  }
+
+  toggleCardapioPicker(): void {
+    this.cardapioPickerAberto = !this.cardapioPickerAberto;
+    if (this.cardapioPickerAberto) {
+      const cats = this.categoriasParaCardapio();
+      if (cats.length === 1) {
+        this.categoriaAtivaId = cats[0].id;
+      }
+    }
+  }
+
+  rotuloBotaoCardapio(): string {
+    if (this.cardapioPickerAberto) {
+      return 'Ocultar cardápio';
+    }
+    const p = this.produtoPorId(this.produtoId);
+    if (p) {
+      return `Cardápio · ${p.nome}`;
+    }
+    return 'Cardápio · escolher produto';
+  }
+
+  selecionarCategoriaCardapio(catId: number): void {
+    this.categoriaAtivaId = catId;
+    const lista = this.produtosNaCategoria(catId);
+    if (!lista.some((p) => p.id === this.produtoId)) {
+      this.produtoId = null;
+      this.onProdutoIdChange();
+    }
   }
 
   produtoSelecionadoEhEspetinho(): boolean {
@@ -155,12 +231,18 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   private readonly statusPermiteTransferirMesa: PedidoStatus[] = ['RASCUNHO', 'ABERTO', 'EM_PREPARO', 'PRONTO'];
 
   ngOnInit(): void {
-    this.api.getProdutos().subscribe((p) => {
-      this.produtos = p;
-      if (p.length) {
-        this.produtoId = p[0].id;
-      }
-    });
+    forkJoin([this.api.getProdutos(), this.api.getCategorias()])
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ([produtos, categorias]) => {
+          this.produtos = produtos;
+          this.categorias = categorias;
+          this.produtoId = null;
+          this.categoriaAtivaId = null;
+          this.pontoCarneSelecao = null;
+          this.pontoCarneMenuAberto = false;
+        },
+      });
 
     this.route.paramMap
       .pipe(
@@ -189,6 +271,10 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   onEscapeFecharAcoes(): void {
     if (this.pontoCarneMenuAberto) {
       this.pontoCarneMenuAberto = false;
+      return;
+    }
+    if (this.cardapioPickerAberto) {
+      this.cardapioPickerAberto = false;
       return;
     }
     if (this.panelAcoesAberto) {
