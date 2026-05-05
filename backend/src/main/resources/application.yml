@@ -38,6 +38,11 @@ app:
     retention-days: 14
   mesas:
     quantidade-inicial: 40
+  catalogo:
+    # Ao subir a API: se versao_catalogo_seed no banco for menor que este valor, o cardápio oficial é recriado automaticamente. Incremente ao alterar o seed em DataInitializer.
+    versao-seed-oficial: 2
+    # Opcional: força limpeza + seed a cada startup (só desenvolvimento / recuperação).
+    forcar-reseed: ${APP_CATALOGO_FORCAR_RESEED:false}
   cors:
     # "*" aceita qualquer Origin (login no celular com http://IP:4200 sem variável de ambiente).
     # Para API exposta na internet, restrinja origens e remova o *.

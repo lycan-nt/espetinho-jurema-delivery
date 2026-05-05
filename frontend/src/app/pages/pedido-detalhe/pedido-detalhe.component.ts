@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { filter, forkJoin, map, Subject, takeUntil } from 'rxjs';
+import { catchError, filter, forkJoin, map, of, Subject, switchMap, takeUntil } from 'rxjs';
 import { ApiBackendService } from '../../core/api-backend.service';
 import { AuthService } from '../../core/auth.service';
 import { RealtimeService } from '../../core/realtime.service';
@@ -118,7 +118,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   }
 
   private idsCategoriasCadastradas(): Set<number> {
-    return new Set(this.categorias.map((c) => c.id));
+    return new Set(this.categorias.map((c) => Number(c.id)));
   }
 
   private produtoEstaAtivo(pr: Produto): boolean {
@@ -129,7 +129,9 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   private temLinhaOutros(): boolean {
     const ids = this.idsCategoriasCadastradas();
     return this.produtos.some(
-      (p) => this.produtoEstaAtivo(p) && (p.categoriaId == null || !ids.has(p.categoriaId)),
+      (p) =>
+        this.produtoEstaAtivo(p) &&
+        (p.categoriaId == null || !ids.has(Number(p.categoriaId))),
     );
   }
 
@@ -137,9 +139,9 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
     const base = this.produtos.filter((p) => this.produtoEstaAtivo(p));
     if (catId === CAT_OUTROS_ID) {
       const ids = this.idsCategoriasCadastradas();
-      return base.filter((p) => p.categoriaId == null || !ids.has(p.categoriaId));
+      return base.filter((p) => p.categoriaId == null || !ids.has(Number(p.categoriaId)));
     }
-    return base.filter((p) => p.categoriaId === catId);
+    return base.filter((p) => Number(p.categoriaId) === Number(catId));
   }
 
   categoriasParaCardapio(): { id: number; nome: string }[] {
@@ -179,7 +181,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   selecionarCategoriaCardapio(catId: number): void {
     this.categoriaAtivaId = catId;
     const lista = this.produtosNaCategoria(catId);
-    if (!lista.some((p) => p.id === this.produtoId)) {
+    if (!lista.some((p) => Number(p.id) === Number(this.produtoId))) {
       this.produtoId = null;
       this.onProdutoIdChange();
     }
@@ -235,8 +237,20 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   private readonly statusPermiteTransferirMesa: PedidoStatus[] = ['RASCUNHO', 'ABERTO', 'EM_PREPARO', 'PRONTO'];
 
   ngOnInit(): void {
-    forkJoin([this.api.getProdutos(), this.api.getCategorias()])
-      .pipe(takeUntil(this.destroy$))
+    this.route.paramMap
+      .pipe(
+        takeUntil(this.destroy$),
+        switchMap((pm) => {
+          this.pedidoId = Number(pm.get('id'));
+          this.carregarPedido();
+          return forkJoin([this.api.getProdutos(), this.api.getCategorias()]).pipe(
+            catchError(() => {
+              this.erroItem = 'Não foi possível carregar categorias e produtos. Verifique a API e tente de novo.';
+              return of<[Produto[], CategoriaCardapio[]]>([[], []]);
+            }),
+          );
+        }),
+      )
       .subscribe({
         next: ([produtos, categorias]) => {
           this.produtos = produtos;
@@ -246,16 +260,6 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
           this.pontoCarneSelecao = null;
           this.pontoCarneMenuAberto = false;
         },
-      });
-
-    this.route.paramMap
-      .pipe(
-        takeUntil(this.destroy$),
-        map((pm) => Number(pm.get('id'))),
-      )
-      .subscribe((id) => {
-        this.pedidoId = id;
-        this.carregarPedido();
       });
 
     this.realtime.pedidoEventos
