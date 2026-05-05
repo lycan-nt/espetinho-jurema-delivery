@@ -65,8 +65,7 @@ export class AlertasAtendimentoPanelComponent implements OnInit, OnDestroy {
           imprimirTextoTerminalBrowser(r.textoComanda, 'Comanda cozinha');
         }
         this.setStatus(alertaId, 'impresso');
-        // Remove o card automaticamente após 5s
-        setTimeout(() => this.fechar(alertaId), 5_000);
+        // Card permanece na tela — atendente fecha manualmente clicando em OK
       },
       error: () => {
         this.setStatus(alertaId, 'erro');

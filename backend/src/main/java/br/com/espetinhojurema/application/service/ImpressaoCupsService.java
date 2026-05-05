@@ -41,10 +41,10 @@ public class ImpressaoCupsService {
     private static final DocFlavor STREAM_TEXT_UTF8 = new DocFlavor.INPUT_STREAM("text/plain; charset=UTF-8");
 
     /**
-     * ESC/POS GS V A 0 — avança o papel até a posição de corte e executa corte completo.
-     * Equivale ao botão físico "feed + cut" da impressora térmica.
+     * ESC/POS GS V B 0 — corte parcial (~95%): deixa uma pequena dobra ligando as folhas.
+     * O papel não cai sozinho; precisa puxar. Ideal quando chegam várias comandas seguidas.
      */
-    private static final byte[] ESCPOS_CORTE_AUTOMATICO = { 0x1D, 0x56, 0x41, 0x00 };
+    private static final byte[] ESCPOS_CORTE_AUTOMATICO = { 0x1D, 0x56, 0x42, 0x00 };
 
     /**
      * PowerShell script que chama WritePrinter com datatype=RAW.
