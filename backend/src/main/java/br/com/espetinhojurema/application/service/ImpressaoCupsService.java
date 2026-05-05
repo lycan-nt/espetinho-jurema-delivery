@@ -41,6 +41,12 @@ public class ImpressaoCupsService {
     private static final DocFlavor STREAM_TEXT_UTF8 = new DocFlavor.INPUT_STREAM("text/plain; charset=UTF-8");
 
     /**
+     * ESC/POS GS V A 0 — avança o papel até a posição de corte e executa corte completo.
+     * Equivale ao botão físico "feed + cut" da impressora térmica.
+     */
+    private static final byte[] ESCPOS_CORTE_AUTOMATICO = { 0x1D, 0x56, 0x41, 0x00 };
+
+    /**
      * PowerShell script que chama WritePrinter com datatype=RAW.
      * Bytes chegam direto ao firmware da impressora — sem GDI, sem escalonamento de fonte.
      */
@@ -183,7 +189,13 @@ public class ImpressaoCupsService {
         Path tmpPs  = null;
         try {
             // Normaliza para ASCII puro: remove acentos/diacríticos para evitar "prefer|ncia" etc.
-            byte[] bytes = normalizarTextoTermica(texto).getBytes(StandardCharsets.US_ASCII);
+            byte[] textoBytes = normalizarTextoTermica(texto).getBytes(StandardCharsets.US_ASCII);
+
+            // Anexa comando ESC/POS de corte automático ao final (GS V A 0)
+            byte[] bytes = new byte[textoBytes.length + ESCPOS_CORTE_AUTOMATICO.length];
+            System.arraycopy(textoBytes, 0, bytes, 0, textoBytes.length);
+            System.arraycopy(ESCPOS_CORTE_AUTOMATICO, 0, bytes, textoBytes.length, ESCPOS_CORTE_AUTOMATICO.length);
+
             tmpDat = Files.createTempFile("ej-dat-", ".bin");
             Files.write(tmpDat, bytes);
 

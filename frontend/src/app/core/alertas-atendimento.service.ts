@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { Subject } from 'rxjs';
 import { AuthService } from './auth.service';
 import { RealtimeService } from './realtime.service';
 import { AlertaAtendimentoWsPayload } from '../models/api.models';
@@ -23,6 +24,9 @@ export class AlertasAtendimentoService {
   /** Enquanto o ciclo de som (~30s) está ativo — para piscar a caixinha da mesa na tela. */
   readonly alarmeAtivo = signal(false);
 
+  /** Emite cada novo alerta assim que chega — usado pelo panel para auto-imprimir. */
+  readonly novoAlerta$ = new Subject<AlertaAtendimentoWsPayload>();
+
   constructor() {
     // Singleton de app: sem teardown; o stream segue a sessão WebSocket.
     this.realtime.alertasAtendimento.subscribe((a) => {
@@ -36,6 +40,7 @@ export class AlertasAtendimentoService {
         return;
       }
       this.fila.update((q) => [...q, a]);
+      this.novoAlerta$.next(a);
       void this.tocarSomAlerta();
     });
   }

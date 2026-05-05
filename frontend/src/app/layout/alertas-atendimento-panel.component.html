@@ -10,26 +10,41 @@
         <span class="mesa-caixa">Mesa {{ a.mesaNumero }}</span>
       }
     </div>
+
     <div class="alertas-dock" role="region" aria-label="Alertas de mesa">
       @for (a of alertas.fila(); track a.alertaId) {
-        <div class="alerta-card">
+        <div class="alerta-card" [class]="'status-' + statusDe(a.alertaId)">
           <div class="alerta-body">
             <strong>Comanda para a cozinha</strong>
             <span class="mesa">Mesa {{ a.mesaNumero }}</span>
             <span class="ped">Pedido #{{ a.pedidoId }}</span>
           </div>
-          <div class="alerta-actions">
-            <button
-              type="button"
-              class="btn btn-primary sm"
-              [disabled]="alertas.processandoId() === a.alertaId"
-              (click)="ok(a.alertaId)"
-            >
-              {{ alertas.processandoId() === a.alertaId ? 'Imprimindo…' : 'Imprimir comanda' }}
-            </button>
-            <button type="button" class="btn btn-ghost sm" [disabled]="alertas.processandoId() === a.alertaId" (click)="ignorar(a.alertaId)">
-              Ignorar
-            </button>
+
+          <div class="status-row">
+            @switch (statusDe(a.alertaId)) {
+              @case ('imprimindo') {
+                <span class="status-badge imprimindo">
+                  <span class="spinner-sm"></span> Imprimindo…
+                </span>
+              }
+              @case ('impresso') {
+                <span class="status-badge impresso">✓ Impresso</span>
+              }
+              @case ('erro') {
+                <span class="status-badge erro">⚠ Falha na impressão</span>
+              }
+            }
+
+            <div class="alerta-actions">
+              @if (statusDe(a.alertaId) === 'erro') {
+                <button type="button" class="btn btn-outline sm" (click)="reimprimir(a.alertaId)">
+                  Tentar novamente
+                </button>
+              }
+              <button type="button" class="btn btn-ghost sm" (click)="fechar(a.alertaId)">
+                OK
+              </button>
+            </div>
           </div>
         </div>
       }
