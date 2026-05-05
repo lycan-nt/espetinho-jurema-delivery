@@ -131,7 +131,12 @@
       @if (erroItem) {
         <p class="err">{{ erroItem }}</p>
       }
-      <button type="button" class="btn btn-primary" [disabled]="!itemPodeSerAdicionado()" (click)="adicionarItem()">
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="botaoAdicionarItemDesabilitado()"
+        (click)="adicionarItem()"
+      >
         {{ carregandoItem ? 'Adicionando…' : 'Adicionar' }}
       </button>
     </div>

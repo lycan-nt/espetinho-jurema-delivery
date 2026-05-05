@@ -196,6 +196,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   onProdutoIdChange(): void {
     this.pontoCarneSelecao = null;
     this.pontoCarneMenuAberto = false;
+    this.erroItem = null;
   }
 
   rotuloPrincipalBotaoPonto(): string {
@@ -212,6 +213,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   selecionarPontoCarne(op: PontoCarne): void {
     this.pontoCarneSelecao = op;
     this.pontoCarneMenuAberto = false;
+    this.erroItem = null;
   }
 
   /** Fecha o menu ao tocar fora (sem bloquear o restante da página). */
@@ -232,6 +234,11 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
       return false;
     }
     return !this.produtoSelecionadoEhEspetinho() || this.pontoCarneSelecao !== null;
+  }
+
+  /** Botão permanece ativo sem ponto (espetinho) para o toque mostrar a mensagem de validação. */
+  botaoAdicionarItemDesabilitado(): boolean {
+    return !this.pedido || this.produtoId == null || this.carregandoItem;
   }
 
   private readonly statusPermiteTransferirMesa: PedidoStatus[] = ['RASCUNHO', 'ABERTO', 'EM_PREPARO', 'PRONTO'];
@@ -454,7 +461,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
       return;
     }
     if (!this.itemPodeSerAdicionado()) {
-      this.erroItem = 'Escolha o ponto da carne.';
+      this.erroItem = 'Por favor, escolha o ponto da carne antes de adicionar.';
       return;
     }
     const ponto = this.produtoSelecionadoEhEspetinho() ? this.pontoCarneSelecao : null;
