@@ -101,46 +101,18 @@
   font-size: 0.82rem;
 }
 
-.status-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+.alerta-detail {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.82rem;
-  font-weight: 600;
-  padding: 0.25rem 0.6rem;
-  border-radius: 999px;
-
-  &.imprimindo {
-    background: rgba(255, 180, 50, 0.15);
-    color: #f5a623;
-  }
-
-  &.impresso {
-    background: rgba(61, 220, 132, 0.15);
-    color: var(--ok);
-  }
-
-  &.erro {
-    background: rgba(255, 107, 107, 0.15);
-    color: var(--warn);
-  }
+.alerta-card.alerta-card--fechamento {
+  border-color: rgba(136, 180, 250, 0.75);
 }
 
-// Borda do card muda conforme status
-.alerta-card.status-impresso {
-  border-color: var(--ok);
-}
-
-.alerta-card.status-erro {
-  border-color: var(--warn);
+.alerta-card.alerta-card--fechamento .alerta-body strong {
+  color: #9ec5ff;
 }
 
 .alerta-actions {
@@ -153,18 +125,4 @@
   min-height: 2.25rem;
   padding: 0.35rem 0.75rem;
   font-size: 0.82rem;
-}
-
-.spinner-sm {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border: 2px solid rgba(245, 166, 35, 0.35);
-  border-top-color: #f5a623;
-  border-radius: 50%;
-  animation: spin-sm 0.7s linear infinite;
-}
-
-@keyframes spin-sm {
-  to { transform: rotate(360deg); }
 }

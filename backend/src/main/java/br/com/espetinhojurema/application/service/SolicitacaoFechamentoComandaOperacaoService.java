@@ -11,14 +11,18 @@ import br.com.espetinhojurema.domain.model.TipoAlertaAtendimento;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Churrasqueiro notifica o balcão que a mesa quer fechar a conta. Não encerra o pedido. No PC, ao dar OK no
+ * alerta, imprime-se a mesma comanda de cozinha gerada pelo fluxo habitual (`ComandaCozinhaTextoService`).
+ */
 @Service
-public class EnvioComandaAtendimentoService {
+public class SolicitacaoFechamentoComandaOperacaoService {
 
     private final PedidosPersistencePort pedidosPersistencePort;
     private final AlertasAtendimentoPersistencePort alertasAtendimentoPersistencePort;
     private final AtendimentoAlertaPublisherPort atendimentoAlertaPublisherPort;
 
-    public EnvioComandaAtendimentoService(
+    public SolicitacaoFechamentoComandaOperacaoService(
             PedidosPersistencePort pedidosPersistencePort,
             AlertasAtendimentoPersistencePort alertasAtendimentoPersistencePort,
             AtendimentoAlertaPublisherPort atendimentoAlertaPublisherPort) {
@@ -27,33 +31,31 @@ public class EnvioComandaAtendimentoService {
         this.atendimentoAlertaPublisherPort = atendimentoAlertaPublisherPort;
     }
 
-    /**
-     * Após o garçom/churrasqueiro lançar itens: notifica o atendimento (PC) para imprimir comanda na cozinha.
-     */
     @Transactional
-    public PedidoDetalheView enviarComanda(Long pedidoId) {
-        PedidoDetalheView pedido = pedidosPersistencePort
-                .buscarDetalhe(pedidoId)
-                .orElseThrow(() -> new BusinessException("Pedido não encontrado"));
+    public void solicitarParaMesa(Long mesaId) {
+        Long pedidoId = pedidosPersistencePort
+                .obterIdPedidoAbertoNaMesa(mesaId)
+                .orElseThrow(() -> new BusinessException("Esta mesa não possui pedido em aberto"));
+        PedidoDetalheView pedido =
+                pedidosPersistencePort.buscarDetalhe(pedidoId).orElseThrow(() -> new BusinessException("Pedido não encontrado"));
+
         if (pedido.tipo() != PedidoTipo.MESA) {
-            throw new BusinessException("Envio de comanda só se aplica a pedidos de mesa");
+            throw new BusinessException("Apenas pedidos do tipo mesa podem usar esta solicitação");
         }
         if (pedido.status() == PedidoStatus.PAGO || pedido.status() == PedidoStatus.CANCELADO) {
-            throw new BusinessException("Pedido encerrado");
+            throw new BusinessException("Pedido já encerrado");
         }
-        boolean temItemAtivo = pedido.itens().stream().anyMatch(i -> !i.cancelado());
-        if (!temItemAtivo) {
-            throw new BusinessException("Adicione ao menos um item antes de enviar a comanda");
+        Integer mesaNumero = pedido.mesaNumero();
+        if (mesaNumero == null) {
+            throw new BusinessException("Pedido sem número de mesa");
         }
-        if (pedido.mesaNumero() == null) {
-            throw new BusinessException("Pedido sem mesa associada");
-        }
-        var tipoComanda = TipoAlertaAtendimento.COMANDA_ENVIADA;
-        String alertaId = alertasAtendimentoPersistencePort.criarPendente(pedidoId, pedido.mesaNumero(), tipoComanda);
+
+        var tipo = TipoAlertaAtendimento.SOLICITACAO_FECHAMENTO_COMANDA;
+        String alertaId = alertasAtendimentoPersistencePort
+                .encontrarAlertaIdPendente(pedidoId, tipo)
+                .orElseGet(() -> alertasAtendimentoPersistencePort.criarPendente(pedidoId, mesaNumero, tipo));
+
         atendimentoAlertaPublisherPort.notificarAtendimento(
-                tipoComanda.name(), pedidoId, pedido.mesaNumero(), alertaId);
-        return pedidosPersistencePort
-                .buscarDetalhe(pedidoId)
-                .orElseThrow();
+                tipo.name(), pedidoId, mesaNumero, alertaId);
     }
 }

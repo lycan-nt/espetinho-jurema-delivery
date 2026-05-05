@@ -25,7 +25,7 @@
       <div class="row">
         <div class="field">
           <label>Produto</label>
-          <select [(ngModel)]="produtoId" name="prod">
+          <select [(ngModel)]="produtoId" name="prod" (ngModelChange)="onProdutoIdChange()">
             @for (pr of produtos; track pr.id) {
               <option [ngValue]="pr.id">
                 {{ pr.nome }} — {{ pr.preco | number : '1.2-2' }}
@@ -41,6 +41,38 @@
           <input type="number" min="1" [(ngModel)]="quantidade" name="qtd" />
         </div>
       </div>
+      @if (produtoSelecionadoEhEspetinho()) {
+        <div class="field ponto-carne-dropdown" #pontoDropdownRoot>
+          <button
+            type="button"
+            class="btn btn-ponto-dropdown-toggle full-width-touch"
+            [attr.aria-expanded]="pontoCarneMenuAberto"
+            aria-haspopup="listbox"
+            [attr.aria-controls]="pontoCarneMenuAberto ? 'ponto-carne-lista' : null"
+            (click)="alternarMenuPontoCarne(); $event.stopPropagation()"
+          >
+            <span>{{ rotuloPrincipalBotaoPonto() }}</span>
+            <span class="ponto-chevron" aria-hidden="true">{{ pontoCarneMenuAberto ? '▴' : '▾' }}</span>
+          </button>
+          @if (pontoCarneMenuAberto) {
+            <ul id="ponto-carne-lista" class="ponto-carne-dropdown-lista" role="listbox" aria-label="Ponto da carne">
+              @for (op of opcoesPontoCarne; track op.valor) {
+                <li role="presentation">
+                  <button
+                    type="button"
+                    class="btn-ponto-dropdown-item"
+                    role="option"
+                    [attr.aria-selected]="pontoCarneSelecao === op.valor"
+                    (click)="selecionarPontoCarne(op.valor); $event.stopPropagation()"
+                  >
+                    {{ op.rotulo }}
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
       <div class="field">
         <label>Observação</label>
         <input [(ngModel)]="observacao" name="obs" />
@@ -48,7 +80,9 @@
       @if (erroItem) {
         <p class="err">{{ erroItem }}</p>
       }
-      <button type="button" class="btn btn-primary" [disabled]="carregandoItem" (click)="adicionarItem()">Adicionar</button>
+      <button type="button" class="btn btn-primary" [disabled]="!itemPodeSerAdicionado()" (click)="adicionarItem()">
+        {{ carregandoItem ? 'Adicionando…' : 'Adicionar' }}
+      </button>
     </div>
   }
 
@@ -69,6 +103,9 @@
             >
               {{ cancelandoItemId === it.id ? '…' : 'Cancelar item' }}
             </button>
+          }
+          @if (it.pontoCarne) {
+            <span class="o">Ponto: {{ rotuloPonto[it.pontoCarne] }}</span>
           }
           @if (it.observacao) {
             <span class="o">{{ it.observacao }}</span>

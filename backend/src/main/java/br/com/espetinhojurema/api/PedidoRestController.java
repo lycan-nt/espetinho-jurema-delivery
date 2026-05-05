@@ -89,7 +89,8 @@ public class PedidoRestController {
                 id,
                 request.produtoId(),
                 request.quantidade(),
-                request.observacao());
+                request.observacao(),
+                request.pontoCarne());
     }
 
     @PostMapping("/{id}/itens/{itemId}/cancelar")

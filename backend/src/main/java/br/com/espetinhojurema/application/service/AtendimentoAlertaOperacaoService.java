@@ -37,6 +37,7 @@ public class AtendimentoAlertaOperacaoService {
         var pedido = pedidosPersistencePort
                 .buscarDetalhe(registro.pedidoId())
                 .orElseThrow(() -> new BusinessException("Pedido não encontrado"));
+
         String texto = comandaCozinhaTextoService.gerar(pedido);
         if (!registro.pendente()) {
             boolean impressoServidor = tentarImprimirServidor(texto);

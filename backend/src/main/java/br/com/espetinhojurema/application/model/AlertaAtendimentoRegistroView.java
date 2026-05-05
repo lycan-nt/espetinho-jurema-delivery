@@ -1,5 +1,6 @@
 package br.com.espetinhojurema.application.model;
 
+import br.com.espetinhojurema.domain.model.TipoAlertaAtendimento;
 import java.time.Instant;
 
 public record AlertaAtendimentoRegistroView(
@@ -8,8 +9,8 @@ public record AlertaAtendimentoRegistroView(
         Integer mesaNumero,
         Instant criadoEm,
         Instant reconhecidoEm,
-        String reconhecidoPor
-) {
+        String reconhecidoPor,
+        TipoAlertaAtendimento tipo) {
     public boolean pendente() {
         return reconhecidoEm == null;
     }

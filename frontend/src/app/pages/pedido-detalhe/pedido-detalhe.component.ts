@@ -1,5 +1,13 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { filter, forkJoin, map, Subject, takeUntil } from 'rxjs';
@@ -13,8 +21,24 @@ import {
   MesaTransferencia,
   PedidoDetalhe,
   PedidoStatus,
+  PontoCarne,
   Produto,
 } from '../../models/api.models';
+
+const ROTULO_PONTO: Record<PontoCarne, string> = {
+  MAL_PASSADA: 'Mal passada',
+  AO_PONTO: 'Ao ponto',
+  BEM_PASSADA: 'Bem passada',
+};
+
+/** Igual ao backend; produtos nesta categoria exigem ponto ao lançar. */
+const CATEGORIA_ESPETINHOS = 'Espetinhos';
+
+const OPCOES_PONTO_CARNE: { valor: PontoCarne; rotulo: string }[] = [
+  { valor: 'MAL_PASSADA', rotulo: ROTULO_PONTO.MAL_PASSADA },
+  { valor: 'AO_PONTO', rotulo: ROTULO_PONTO.AO_PONTO },
+  { valor: 'BEM_PASSADA', rotulo: ROTULO_PONTO.BEM_PASSADA },
+];
 
 const ROTULO_FORMA: Record<FormaPagamento, string> = {
   DINHEIRO: 'Dinheiro',
@@ -31,6 +55,8 @@ const ROTULO_FORMA: Record<FormaPagamento, string> = {
   styleUrl: './pedido-detalhe.component.scss',
 })
 export class PedidoDetalheComponent implements OnInit, OnDestroy {
+  @ViewChild('pontoDropdownRoot') private pontoDropdownRoot?: ElementRef<HTMLElement>;
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(ApiBackendService);
@@ -44,6 +70,12 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   produtoId: number | null = null;
   quantidade = 1;
   observacao = '';
+  /** Menu “Ponto da carne”: um botão abre/fecha opções (mobile-first). */
+  pontoCarneMenuAberto = false;
+  /** Obrigatório ao lançar item da categoria Espetinhos. */
+  pontoCarneSelecao: PontoCarne | null = null;
+  readonly opcoesPontoCarne = OPCOES_PONTO_CARNE;
+  readonly rotuloPonto = ROTULO_PONTO;
   carregandoItem = false;
   erroItem: string | null = null;
   erroPagamento: string | null = null;
@@ -68,6 +100,57 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   panelAcoesAberto = false;
 
   readonly rotuloForma = ROTULO_FORMA;
+
+  private produtoPorId(id: number | null): Produto | undefined {
+    return id != null ? this.produtos.find((x) => x.id === id) : undefined;
+  }
+
+  produtoSelecionadoEhEspetinho(): boolean {
+    const p = this.produtoPorId(this.produtoId);
+    const nome = p?.categoriaNome?.trim();
+    return nome != null && nome.toLowerCase() === CATEGORIA_ESPETINHOS.toLowerCase();
+  }
+
+  onProdutoIdChange(): void {
+    this.pontoCarneSelecao = null;
+    this.pontoCarneMenuAberto = false;
+  }
+
+  rotuloPrincipalBotaoPonto(): string {
+    if (this.pontoCarneSelecao !== null) {
+      return `Ponto: ${ROTULO_PONTO[this.pontoCarneSelecao]}`;
+    }
+    return 'Escolher ponto da carne…';
+  }
+
+  alternarMenuPontoCarne(): void {
+    this.pontoCarneMenuAberto = !this.pontoCarneMenuAberto;
+  }
+
+  selecionarPontoCarne(op: PontoCarne): void {
+    this.pontoCarneSelecao = op;
+    this.pontoCarneMenuAberto = false;
+  }
+
+  /** Fecha o menu ao tocar fora (sem bloquear o restante da página). */
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(ev: MouseEvent): void {
+    const t = ev.target;
+    if (!this.pontoCarneMenuAberto || !(t instanceof Node)) {
+      return;
+    }
+    const root = this.pontoDropdownRoot?.nativeElement;
+    if (root && !root.contains(t)) {
+      this.pontoCarneMenuAberto = false;
+    }
+  }
+
+  itemPodeSerAdicionado(): boolean {
+    if (!this.pedido || this.produtoId == null || this.carregandoItem) {
+      return false;
+    }
+    return !this.produtoSelecionadoEhEspetinho() || this.pontoCarneSelecao !== null;
+  }
 
   private readonly statusPermiteTransferirMesa: PedidoStatus[] = ['RASCUNHO', 'ABERTO', 'EM_PREPARO', 'PRONTO'];
 
@@ -104,6 +187,10 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEscapeFecharAcoes(): void {
+    if (this.pontoCarneMenuAberto) {
+      this.pontoCarneMenuAberto = false;
+      return;
+    }
     if (this.panelAcoesAberto) {
       this.fecharPanelAcoes();
     }
@@ -229,14 +316,21 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
     if (!this.pedido || !this.produtoId) {
       return;
     }
+    if (!this.itemPodeSerAdicionado()) {
+      this.erroItem = 'Escolha o ponto da carne.';
+      return;
+    }
+    const ponto = this.produtoSelecionadoEhEspetinho() ? this.pontoCarneSelecao : null;
     this.carregandoItem = true;
     this.erroItem = null;
-    this.api.adicionarItem(this.pedido.id, this.produtoId, this.quantidade, this.observacao || null).subscribe({
+    this.api.adicionarItem(this.pedido.id, this.produtoId, this.quantidade, this.observacao || null, ponto).subscribe({
       next: (p) => {
         this.pedido = p;
         this.carregandoItem = false;
         this.observacao = '';
         this.quantidade = 1;
+        this.pontoCarneSelecao = null;
+        this.pontoCarneMenuAberto = false;
       },
       error: (e) => {
         this.carregandoItem = false;

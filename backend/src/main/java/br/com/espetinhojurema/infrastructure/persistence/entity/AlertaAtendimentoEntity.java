@@ -1,7 +1,10 @@
 package br.com.espetinhojurema.infrastructure.persistence.entity;
 
+import br.com.espetinhojurema.domain.model.TipoAlertaAtendimento;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -27,6 +30,13 @@ public class AlertaAtendimentoEntity {
 
     @Column(length = 120)
     private String reconhecidoPor;
+
+    /**
+     * Bases antigas podem ter NULL após DDL — tratar como {@link TipoAlertaAtendimento#COMANDA_ENVIADA}.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 48)
+    private TipoAlertaAtendimento tipo;
 
     public String getId() {
         return id;
@@ -74,5 +84,13 @@ public class AlertaAtendimentoEntity {
 
     public void setReconhecidoPor(String reconhecidoPor) {
         this.reconhecidoPor = reconhecidoPor;
+    }
+
+    public TipoAlertaAtendimento getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(TipoAlertaAtendimento tipo) {
+        this.tipo = tipo;
     }
 }

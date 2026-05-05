@@ -10,6 +10,12 @@ const ALARME_INTERVALO_MS = 2_450;
 
 @Injectable({ providedIn: 'root' })
 export class AlertasAtendimentoService {
+  private static readonly TIPOS_ACEITOS = new Set<string>([
+    'COMANDA_ENVIADA',
+    'MESA_ABERTA',
+    'SOLICITACAO_FECHAMENTO_COMANDA',
+  ]);
+
   private readonly realtime = inject(RealtimeService);
   private readonly auth = inject(AuthService);
 
@@ -33,10 +39,14 @@ export class AlertasAtendimentoService {
       if (this.auth.usuario()?.perfil !== 'ATENDIMENTO') {
         return;
       }
-      if ((a.tipo !== 'COMANDA_ENVIADA' && a.tipo !== 'MESA_ABERTA') || !a.alertaId) {
+      if (!a.alertaId || !AlertasAtendimentoService.TIPOS_ACEITOS.has(a.tipo)) {
         return;
       }
-      if (this.fila().some((x) => x.alertaId === a.alertaId)) {
+      const jaTemId = this.fila().some((x) => x.alertaId === a.alertaId);
+      if (jaTemId) {
+        if (a.tipo === 'SOLICITACAO_FECHAMENTO_COMANDA') {
+          void this.tocarSomAlerta();
+        }
         return;
       }
       this.fila.update((q) => [...q, a]);

@@ -5,6 +5,7 @@ import br.com.espetinhojurema.application.model.MesaTransferenciaView;
 import br.com.espetinhojurema.application.model.PedidoDetalheView;
 import br.com.espetinhojurema.application.model.PedidoListaView;
 import br.com.espetinhojurema.domain.model.FormaPagamento;
+import br.com.espetinhojurema.domain.model.PontoCarne;
 import br.com.espetinhojurema.domain.model.PedidoStatus;
 import br.com.espetinhojurema.domain.model.PedidoTipo;
 import java.math.BigDecimal;
@@ -21,7 +22,8 @@ public interface PedidosPersistencePort {
 
     PedidoDetalheView criarPedido(CriarPedidoCommand command);
 
-    PedidoDetalheView adicionarItem(Long pedidoId, Long produtoId, int quantidade, String observacao);
+    PedidoDetalheView adicionarItem(
+            Long pedidoId, Long produtoId, int quantidade, String observacao, PontoCarne pontoCarne);
 
     PedidoDetalheView cancelarItemPedido(Long pedidoId, Long itemPedidoId, String usuarioLogin);
 

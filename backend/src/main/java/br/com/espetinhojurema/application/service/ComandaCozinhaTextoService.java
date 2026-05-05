@@ -1,6 +1,8 @@
 package br.com.espetinhojurema.application.service;
 
 import br.com.espetinhojurema.application.model.PedidoDetalheView;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import org.springframework.stereotype.Service;
@@ -16,7 +18,10 @@ import org.springframework.stereotype.Service;
  * QTD  ITEM
  * ................................
  *   1  Espetinho de Carne
- *      Obs: bem passada
+ *      - Ponto: bem passada
+ *      - Obs.: sem cebola (exemplo livre)
+ * ................................
+ * TOTAL DA CONTA: R$ 24,00
  * ................................
  * N.Pessoas: 2
  * Atendente: JODARIO
@@ -70,6 +75,9 @@ public class ComandaCozinhaTextoService {
             if (item.cancelado()) continue;
             temItens = true;
             sb.append(String.format("%3dx %s%n", item.quantidade(), item.produtoNome()));
+            if (item.pontoCarne() != null) {
+                sb.append("     - Ponto: ").append(item.pontoCarne().rotulo()).append('\n');
+            }
             if (item.observacao() != null && !item.observacao().isBlank()) {
                 // cada linha da observação indentada
                 for (String linha : item.observacao().split("[\r\n]+")) {
@@ -82,6 +90,12 @@ public class ComandaCozinhaTextoService {
         if (!temItens) {
             sb.append("  (sem itens)\n");
         }
+
+        // ── Separador ────────────────────────────────────────────────────────
+        sb.append(separador()).append('\n');
+
+        BigDecimal total = p.total() != null ? p.total() : BigDecimal.ZERO;
+        sb.append("TOTAL DA CONTA: R$ ").append(formatValorPt(total)).append('\n');
 
         // ── Separador ────────────────────────────────────────────────────────
         sb.append(separador()).append('\n');
@@ -116,6 +130,15 @@ public class ComandaCozinhaTextoService {
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private static String formatValorPt(BigDecimal valor) {
+        String s = valor.setScale(2, RoundingMode.HALF_UP).toPlainString();
+        int p = s.indexOf('.');
+        if (p < 0) {
+            return s + ",00";
+        }
+        return s.substring(0, p) + ',' + s.substring(p + 1);
+    }
 
     /** Linha de pontos com {@link #W} caracteres. */
     private static String separador() {
