@@ -1,7 +1,10 @@
 package br.com.espetinhojurema.infrastructure.persistence.entity;
 
+import br.com.espetinhojurema.domain.model.PontoCarne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -36,6 +39,10 @@ public class ItemPedidoEntity {
 
     @Column(length = 300)
     private String observacao;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ponto_carne")
+    private PontoCarne pontoCarne;
 
     /**
      * {@code null} ou {@code false} = item válido na conta. Wrapper evita erro de leitura se a coluna
@@ -95,6 +102,14 @@ public class ItemPedidoEntity {
 
     public void setObservacao(String observacao) {
         this.observacao = observacao;
+    }
+
+    public PontoCarne getPontoCarne() {
+        return pontoCarne;
+    }
+
+    public void setPontoCarne(PontoCarne pontoCarne) {
+        this.pontoCarne = pontoCarne;
     }
 
     public boolean isCancelado() {

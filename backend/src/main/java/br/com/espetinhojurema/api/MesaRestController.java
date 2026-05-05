@@ -5,17 +5,21 @@ import br.com.espetinhojurema.api.dto.AtualizarMesaStatusRequest;
 import br.com.espetinhojurema.application.model.MesaComOcupacaoView;
 import br.com.espetinhojurema.application.model.PedidoDetalheView;
 import br.com.espetinhojurema.application.service.MesaOperacoesService;
+import br.com.espetinhojurema.application.service.SolicitacaoFechamentoComandaOperacaoService;
 import br.com.espetinhojurema.domain.model.MesaStatus;
 import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -23,9 +27,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class MesaRestController {
 
     private final MesaOperacoesService mesaOperacoesService;
+    private final SolicitacaoFechamentoComandaOperacaoService solicitacaoFechamentoComandaOperacaoService;
 
-    public MesaRestController(MesaOperacoesService mesaOperacoesService) {
+    public MesaRestController(
+            MesaOperacoesService mesaOperacoesService,
+            SolicitacaoFechamentoComandaOperacaoService solicitacaoFechamentoComandaOperacaoService) {
         this.mesaOperacoesService = mesaOperacoesService;
+        this.solicitacaoFechamentoComandaOperacaoService = solicitacaoFechamentoComandaOperacaoService;
     }
 
     @GetMapping
@@ -57,6 +65,17 @@ public class MesaRestController {
                 request.descricao(),
                 request.pessoas(),
                 request.documentoFiscal());
+    }
+
+    /**
+     * Churrasqueiro: notifica atendimento (balcão) para fechar a comanda na mesa. Não encerra o pedido.
+     * No balcão, OK no alerta gera/imprime comanda igual ao fluxo de comanda enviada.
+     */
+    @PostMapping("/{id}/solicitar-fechamento-comanda")
+    @PreAuthorize("hasRole('CHURRASQUEIRO')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void solicitarFechamentoComanda(@PathVariable Long id) {
+        solicitacaoFechamentoComandaOperacaoService.solicitarParaMesa(id);
     }
 
     @PatchMapping("/{id}/status")

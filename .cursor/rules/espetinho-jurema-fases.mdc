@@ -26,6 +26,12 @@ Antes de codar, leia **`contexto/PLANO-VENDAS-MESAS-E-FLUXO.md`** (fonte da verd
 - **Estoque:** entrada → saída na venda; se **obrigatório** ligado, bloquear ao esgotar; se desligado, permitir negativo; oferecer **ajuste/zerar** saldo para reorganizar.
 - Foco **churrascaria**: atendimento no PC reage a mobile; comanda após **OK**.
 
+## Incremento: ponto da carne (espetinhos)
+
+- **Regra de negócio:** produtos cuja categoria se chama **`Espetinhos`** (mesmo critério no back e no front) exigem **ponto da carne** ao lançar item: enum de domínio `PontoCarne` (`MAL_PASSADA`, `AO_PONTO`, `BEM_PASSADA`); persistência em `itens_pedido.ponto_carne`; DTO `POST .../pedidos/{id}/itens` com campo `pontoCarne`.
+- **UI (detalhe do pedido):** um **único botão** abre/fecha o menu de opções de ponto (dropdown, toque confortável); fora do bloco ou Escape fecha; após escolher e **Adicionar**, o valor vai na API.
+- **Impressão / cozinha:** comanda de cozinha (`ComandaCozinhaTextoService`) e texto de comprovante (`ComprovanteTextoService`) listam **`Ponto:`** no item quando definido; vale para o fluxo OK do atendimento como para impressão de pedido/cupom onde esses serviços são usados.
+
 ## Ao trabalhar em cada fase
 
 - Alterar apenas o necessário; seguir arquitetura limpa/hexagonal no back e boas práticas UI no front.

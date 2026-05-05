@@ -21,6 +21,13 @@ public class ConfiguracaoSistemaEntity {
     @Column(name = "nome_impressora_lp", length = 200)
     private String nomeImpressoraLp;
 
+    /**
+     * Última versão do cardápio oficial aplicada pelo {@code DataInitializer}. {@code null} em bases
+     * antigas é tratado como 0 (dispara reseed quando {@code app.catalogo.versao-seed-oficial} for maior).
+     */
+    @Column(name = "versao_catalogo_seed")
+    private Integer versaoCatalogoSeed;
+
     public Long getId() {
         return id;
     }
@@ -43,5 +50,13 @@ public class ConfiguracaoSistemaEntity {
 
     public void setNomeImpressoraLp(String nomeImpressoraLp) {
         this.nomeImpressoraLp = nomeImpressoraLp;
+    }
+
+    public Integer getVersaoCatalogoSeed() {
+        return versaoCatalogoSeed;
+    }
+
+    public void setVersaoCatalogoSeed(Integer versaoCatalogoSeed) {
+        this.versaoCatalogoSeed = versaoCatalogoSeed;
     }
 }

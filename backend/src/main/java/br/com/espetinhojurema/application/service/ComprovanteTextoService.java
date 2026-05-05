@@ -52,6 +52,9 @@ public class ComprovanteTextoService {
                 sb.append(" (não entra no total)");
             }
             sb.append('\n');
+            if (item.pontoCarne() != null) {
+                sb.append("   Ponto: ").append(item.pontoCarne().rotulo()).append('\n');
+            }
             if (item.observacao() != null && !item.observacao().isBlank()) {
                 sb.append("   Obs: ").append(item.observacao()).append('\n');
             }
@@ -121,6 +124,9 @@ public class ComprovanteTextoService {
                 sb.append(" [CANCELADO]");
             }
             sb.append('\n');
+            if (item.pontoCarne() != null) {
+                sb.append("   Ponto: ").append(item.pontoCarne().rotulo()).append('\n');
+            }
             if (item.observacao() != null && !item.observacao().isBlank()) {
                 sb.append("   Obs: ").append(item.observacao()).append('\n');
             }

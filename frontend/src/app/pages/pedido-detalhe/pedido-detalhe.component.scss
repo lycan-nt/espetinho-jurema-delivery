@@ -179,6 +179,179 @@
   margin-bottom: 1.25rem;
 }
 
+.cardapio-add-block {
+  margin-bottom: 0.85rem;
+}
+
+.cardapio-toggle {
+  width: 100%;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  text-align: left;
+}
+
+.cardapio-chevron {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.cardapio-panel {
+  margin-top: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+
+.cardapio-hint-cat,
+.cardapio-hint-prod {
+  margin: 0 0 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.cardapio-hint-prod {
+  margin-top: 0.85rem;
+}
+
+.cardapio-cat-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.btn-cardapio-cat {
+  min-height: 2.5rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.btn-cardapio-cat:hover {
+  border-color: rgba(230, 57, 0, 0.45);
+}
+
+.btn-cardapio-cat:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.btn-cardapio-cat--on {
+  border-color: var(--accent);
+  background: rgba(230, 57, 0, 0.2);
+  color: #ffc9a8;
+}
+
+.cardapio-prod-field {
+  margin-top: 0.15rem;
+}
+
+.cardapio-prod-field select {
+  width: 100%;
+}
+
+.cardapio-placeholder {
+  margin: 0.35rem 0 0;
+  font-size: 0.84rem;
+}
+
+.cardapio-vazio {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.ponto-carne-dropdown {
+  position: relative;
+  margin-bottom: 0.85rem;
+  z-index: 3;
+}
+
+.btn-ponto-dropdown-toggle.full-width-touch {
+  width: 100%;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  text-align: left;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.btn-ponto-dropdown-toggle.full-width-touch:hover {
+  border-color: rgba(230, 57, 0, 0.45);
+}
+
+.ponto-chevron {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.ponto-carne-dropdown-lista {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0.25rem 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.38);
+}
+
+.ponto-carne-dropdown-lista li {
+  margin: 0;
+}
+
+.btn-ponto-dropdown-item {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.95rem;
+  border: none;
+  background: transparent;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: left;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.btn-ponto-dropdown-item:hover,
+.btn-ponto-dropdown-item:focus-visible {
+  background: rgba(230, 57, 0, 0.18);
+  outline: none;
+}
+
+.btn-ponto-dropdown-item[aria-selected='true'] {
+  background: rgba(230, 57, 0, 0.28);
+}
+
 .field-grow {
   flex: 1;
   min-width: 12rem;
@@ -539,4 +712,61 @@
   .enviar-comanda-btn {
     max-width: none;
   }
+}
+
+.modal-cancel-qtd-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.modal-cancel-qtd {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(400px, calc(100vw - 2rem));
+  max-height: min(90vh, 520px);
+  overflow-y: auto;
+  z-index: 111;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.15rem 1.05rem;
+  padding-bottom: max(1.15rem, calc(1rem + env(safe-area-inset-bottom, 0px)));
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+.modal-cancel-qtd h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.modal-cancel-qtd-sub {
+  margin: 0 0 0.85rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.modal-cancel-qtd-sub strong {
+  color: var(--text);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.hint-cancel-qtd {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+}
+
+.modal-cancel-qtd-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
 }

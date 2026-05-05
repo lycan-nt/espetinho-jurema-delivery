@@ -1,11 +1,9 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { Component, inject } from '@angular/core';
 import { imprimirTextoTerminalBrowser } from '../core/impressao-browser.util';
 import { AlertasAtendimentoService } from '../core/alertas-atendimento.service';
 import { ApiBackendService } from '../core/api-backend.service';
 import { AuthService } from '../core/auth.service';
-
-type StatusImpressao = 'imprimindo' | 'impresso' | 'erro';
+import { AlertaAtendimentoWsPayload } from '../models/api.models';
 
 @Component({
   selector: 'app-alertas-atendimento-panel',
@@ -13,67 +11,53 @@ type StatusImpressao = 'imprimindo' | 'impresso' | 'erro';
   templateUrl: './alertas-atendimento-panel.component.html',
   styleUrl: './alertas-atendimento-panel.component.scss',
 })
-export class AlertasAtendimentoPanelComponent implements OnInit, OnDestroy {
+export class AlertasAtendimentoPanelComponent {
   readonly auth = inject(AuthService);
   readonly alertas = inject(AlertasAtendimentoService);
   private readonly api = inject(ApiBackendService);
-
-  /** Status de impressão por alertaId: imprimindo | impresso | erro */
-  readonly statusMap = signal<Record<string, StatusImpressao>>({});
-
-  private sub?: Subscription;
 
   visivel(): boolean {
     return this.auth.usuario()?.perfil === 'ATENDIMENTO';
   }
 
-  ngOnInit(): void {
-    // Ao chegar novo alerta, dispara impressão automaticamente
-    this.sub = this.alertas.novoAlerta$.subscribe((a) => {
-      this.imprimir(a.alertaId);
-    });
+  ehSolicitaFechamento(a: AlertaAtendimentoWsPayload): boolean {
+    return a.tipo === 'SOLICITACAO_FECHAMENTO_COMANDA';
   }
 
-  ngOnDestroy(): void {
-    this.sub?.unsubscribe();
+  rotuloPrimarioAlerta(): string {
+    return 'Imprimir comanda';
   }
 
-  statusDe(alertaId: string): StatusImpressao {
-    return this.statusMap()[alertaId] ?? 'imprimindo';
+  mensagemTituloAlerta(a: AlertaAtendimentoWsPayload): string {
+    return this.ehSolicitaFechamento(a)
+      ? 'Solicitação: fechar comanda'
+      : 'Comanda para a cozinha';
   }
 
-  /** Fecha/descarta o card manualmente. */
-  fechar(alertaId: string): void {
-    this.alertas.remover(alertaId);
-    this.statusMap.update((m) => {
-      const next = { ...m };
-      delete next[alertaId];
-      return next;
-    });
+  mensagemAjudaAlerta(a: AlertaAtendimentoWsPayload): string {
+    return this.ehSolicitaFechamento(a)
+      ? 'Pedido pra fechar a comanda (churrasqueiro). Ao confirmar, imprime comanda igual ao fluxo habitual.'
+      : '';
   }
 
-  /** Reimprime manualmente em caso de erro. */
-  reimprimir(alertaId: string): void {
-    this.imprimir(alertaId);
-  }
-
-  private imprimir(alertaId: string): void {
-    this.setStatus(alertaId, 'imprimindo');
+  ok(alertaId: string): void {
+    this.alertas.inicioProcessar(alertaId);
     this.api.reconhecerAlertaAtendimento(alertaId).subscribe({
       next: (r) => {
-        if (!r.impressoServidor) {
-          imprimirTextoTerminalBrowser(r.textoComanda, 'Comanda cozinha');
+        const texto = r.textoComanda?.trim() ?? '';
+        if (texto && !r.impressoServidor) {
+          imprimirTextoTerminalBrowser(texto, 'Comanda cozinha');
         }
-        this.setStatus(alertaId, 'impresso');
-        // Card permanece na tela — atendente fecha manualmente clicando em OK
+        this.alertas.inicioProcessar(null);
+        this.alertas.ignorar(alertaId);
       },
       error: () => {
-        this.setStatus(alertaId, 'erro');
+        this.alertas.inicioProcessar(null);
       },
     });
   }
 
-  private setStatus(alertaId: string, status: StatusImpressao): void {
-    this.statusMap.update((m) => ({ ...m, [alertaId]: status }));
+  ignorar(alertaId: string): void {
+    this.alertas.ignorar(alertaId);
   }
 }

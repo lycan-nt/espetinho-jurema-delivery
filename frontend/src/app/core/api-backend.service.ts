@@ -18,6 +18,7 @@ import {
   PedidoStatus,
   PedidoTipo,
   PerfilUsuario,
+  PontoCarne,
   Produto,
   ReconhecerAlertaResponse,
   UsuarioAdmin,
@@ -59,6 +60,11 @@ export class ApiBackendService {
 
   patchMesaStatus(mesaId: number, status: string): Observable<void> {
     return this.http.patch<void>(`${this.base}/mesas/${mesaId}/status`, { status });
+  }
+
+  /** Churrasqueiro: avisa apenas o balcão (perfil ATENDIMENTO) que desejam encerrar a comanda na mesa. */
+  solicitarFechamentoComandaMesa(mesaId: number): Observable<void> {
+    return this.http.post<void>(`${this.base}/mesas/${mesaId}/solicitar-fechamento-comanda`, {});
   }
 
   getColaboradores(): Observable<Colaborador[]> {
@@ -166,16 +172,30 @@ export class ApiBackendService {
     return this.http.post<PedidoDetalhe>(`${this.base}/pedidos/avulsos`, body);
   }
 
-  adicionarItem(pedidoId: number, produtoId: number, quantidade: number, observacao?: string | null): Observable<PedidoDetalhe> {
+  adicionarItem(
+    pedidoId: number,
+    produtoId: number,
+    quantidade: number,
+    observacao?: string | null,
+    pontoCarne?: PontoCarne | null,
+  ): Observable<PedidoDetalhe> {
     return this.http.post<PedidoDetalhe>(`${this.base}/pedidos/${pedidoId}/itens`, {
       produtoId,
       quantidade,
       observacao,
+      pontoCarne: pontoCarne ?? null,
     });
   }
 
-  cancelarItemPedido(pedidoId: number, itemId: number): Observable<PedidoDetalhe> {
-    return this.http.post<PedidoDetalhe>(`${this.base}/pedidos/${pedidoId}/itens/${itemId}/cancelar`, {});
+  cancelarItemPedido(pedidoId: number, itemId: number, quantidade?: number | null): Observable<PedidoDetalhe> {
+    const body: Record<string, unknown> = {};
+    if (quantidade != null && Number.isFinite(quantidade) && quantidade > 0) {
+      body['quantidade'] = Math.floor(quantidade);
+    }
+    return this.http.post<PedidoDetalhe>(
+      `${this.base}/pedidos/${pedidoId}/itens/${itemId}/cancelar`,
+      body,
+    );
   }
 
   /** Garçom/churrasqueiro: após lançar itens, notifica o atendimento (alerta + comanda). */

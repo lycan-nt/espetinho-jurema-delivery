@@ -47,6 +47,10 @@ export class MesasComponent implements OnInit, OnDestroy {
   documentoFiscal = false;
   carregando = false;
   erro: string | null = null;
+  /** Feedback após solicitar fechamento (churrasqueiro → balcão). */
+  feedbackMesas: string | null = null;
+  solicitacaoFechamentoCarregando = false;
+  private feedbackMesasTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Modal de pagamento (caixa) a partir do drawer da mesa ocupada. */
   modalQuitarConta = false;
@@ -77,6 +81,10 @@ export class MesasComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.feedbackMesasTimer != null) {
+      clearTimeout(this.feedbackMesasTimer);
+      this.feedbackMesasTimer = null;
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -105,6 +113,11 @@ export class MesasComponent implements OnInit, OnDestroy {
     this.mesaSelecionada = m;
     this.drawerAberto = true;
     this.erro = null;
+    this.feedbackMesas = null;
+    if (this.feedbackMesasTimer != null) {
+      clearTimeout(this.feedbackMesasTimer);
+      this.feedbackMesasTimer = null;
+    }
     this.clienteNome = '';
   }
 
@@ -167,6 +180,40 @@ export class MesasComponent implements OnInit, OnDestroy {
 
   podeQuitarContaNoCaixa(): boolean {
     return this.auth.usuario()?.perfil === 'ATENDIMENTO';
+  }
+
+  podeSolicitarFechamentoComandaChurrasqueiro(): boolean {
+    return this.auth.usuario()?.perfil === 'CHURRASQUEIRO';
+  }
+
+  solicitarFechamentoComandaParaBalcao(): void {
+    const m = this.mesaSelecionada;
+    if (!m?.pedidoAbertoId) {
+      return;
+    }
+    this.erro = null;
+    this.feedbackMesas = null;
+    if (this.solicitacaoFechamentoCarregando) {
+      return;
+    }
+    this.solicitacaoFechamentoCarregando = true;
+    this.api.solicitarFechamentoComandaMesa(m.id).subscribe({
+      next: () => {
+        this.solicitacaoFechamentoCarregando = false;
+        this.feedbackMesas = 'Solicitação enviada ao balcão.';
+        if (this.feedbackMesasTimer != null) {
+          clearTimeout(this.feedbackMesasTimer);
+        }
+        this.feedbackMesasTimer = setTimeout(() => {
+          this.feedbackMesas = null;
+          this.feedbackMesasTimer = null;
+        }, 4500);
+      },
+      error: (e) => {
+        this.solicitacaoFechamentoCarregando = false;
+        this.erro = e?.error?.erro ?? 'Não foi possível enviar a solicitação.';
+      },
+    });
   }
 
   abrirModalQuitarConta(): void {
@@ -236,6 +283,11 @@ export class MesasComponent implements OnInit, OnDestroy {
     if (this.formaPagamento === 'DINHEIRO') {
       this.valorRecebidoDinheiro = this.valorPagamento;
     }
+  }
+
+  selecionarFormaModal(f: FormaPagamento): void {
+    this.formaPagamento = f;
+    this.onFormaModalChange();
   }
 
   onFormaModalChange(): void {

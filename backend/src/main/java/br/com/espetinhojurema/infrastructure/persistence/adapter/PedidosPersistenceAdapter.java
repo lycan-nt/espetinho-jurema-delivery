@@ -11,6 +11,7 @@ import br.com.espetinhojurema.application.port.out.PedidosPersistencePort;
 import br.com.espetinhojurema.domain.exception.BusinessException;
 import br.com.espetinhojurema.domain.model.FormaPagamento;
 import br.com.espetinhojurema.domain.model.MesaStatus;
+import br.com.espetinhojurema.domain.model.PontoCarne;
 import br.com.espetinhojurema.domain.model.PedidoStatus;
 import br.com.espetinhojurema.domain.model.PedidoTipo;
 import br.com.espetinhojurema.infrastructure.persistence.entity.ItemPedidoEntity;
@@ -41,6 +42,9 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
 
     /** Tolerância para considerar conta quitada (centavos). */
     private static final BigDecimal EPS = new BigDecimal("0.02");
+
+    /** Igual ao seed / cadastro inicial; define produtos nos quais o ponto da carne é obrigatório. */
+    private static final String NOME_CATEGORIA_ESPETINHOS = "Espetinhos";
 
     private static final EnumSet<PedidoStatus> STATUS_PEDIDO_ATIVO_MESA = EnumSet.of(
             PedidoStatus.RASCUNHO,
@@ -148,7 +152,8 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
 
     @Override
     @Transactional
-    public PedidoDetalheView adicionarItem(Long pedidoId, Long produtoId, int quantidade, String observacao) {
+    public PedidoDetalheView adicionarItem(
+            Long pedidoId, Long produtoId, int quantidade, String observacao, PontoCarne pontoCarne) {
         if (quantidade < 1) {
             throw new BusinessException("Quantidade inválida");
         }
@@ -164,6 +169,15 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
             throw new BusinessException("Produto inativo");
         }
 
+        boolean espetinho = produtoEhEspetinho(produto);
+        PontoCarne ponto = null;
+        if (espetinho) {
+            if (pontoCarne == null) {
+                throw new BusinessException("Escolha o ponto da carne.");
+            }
+            ponto = pontoCarne;
+        }
+
         estoqueOperacaoService.aplicarConsumoVenda(produto, quantidade);
 
         var item = new ItemPedidoEntity();
@@ -171,6 +185,7 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
         item.setQuantidade(quantidade);
         item.setPrecoUnitario(produto.getPreco());
         item.setObservacao(observacao);
+        item.setPontoCarne(ponto);
         pedido.addItem(item);
         pedido.setAtualizadoEm(Instant.now());
 
@@ -188,7 +203,8 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
 
     @Override
     @Transactional
-    public PedidoDetalheView cancelarItemPedido(Long pedidoId, Long itemPedidoId, String usuarioLogin) {
+    public PedidoDetalheView cancelarItemPedido(
+            Long pedidoId, Long itemPedidoId, String usuarioLogin, Integer quantidadeCancelar) {
         ItemPedidoEntity item = itemPedidoJpaRepository
                 .findById(itemPedidoId)
                 .orElseThrow(() -> new BusinessException("Item não encontrado"));
@@ -203,20 +219,35 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
             throw new BusinessException("Item já cancelado");
         }
 
-        BigDecimal valorItem = item.getPrecoUnitario()
-                .multiply(BigDecimal.valueOf(item.getQuantidade()))
+        int qtdAtual = item.getQuantidade();
+        int qCancel = quantidadeCancelar != null ? quantidadeCancelar : qtdAtual;
+        if (qCancel <= 0) {
+            throw new BusinessException("Informe uma quantidade válida para cancelar.");
+        }
+        if (qCancel > qtdAtual) {
+            throw new BusinessException("Quantidade maior que a lançada neste item.");
+        }
+
+        BigDecimal valorRemover = item.getPrecoUnitario()
+                .multiply(BigDecimal.valueOf(qCancel))
                 .setScale(2, RoundingMode.HALF_UP);
-        BigDecimal novoTotal = totalItens(pedido).subtract(valorItem).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal novoTotal = totalItens(pedido).subtract(valorRemover).setScale(2, RoundingMode.HALF_UP);
         BigDecimal pago = somarPagamentos(pedido);
         if (pago.subtract(novoTotal).compareTo(EPS) > 0) {
             throw new BusinessException(
-                    "Não é possível cancelar: o valor já pago excede o total da conta após remover este item.");
+                    "Não é possível cancelar: o valor já pago excede o total da conta após remover esta quantidade.");
         }
 
-        estoqueOperacaoService.restaurarQuantidadeProduto(item.getProduto(), item.getQuantidade());
-        item.setCancelado(true);
-        item.setCanceladoEm(Instant.now());
-        item.setCanceladoPorLogin(usuarioLogin != null && !usuarioLogin.isBlank() ? usuarioLogin.trim() : null);
+        estoqueOperacaoService.restaurarQuantidadeProduto(item.getProduto(), qCancel);
+
+        if (qCancel >= qtdAtual) {
+            item.setCancelado(true);
+            item.setCanceladoEm(Instant.now());
+            item.setCanceladoPorLogin(usuarioLogin != null && !usuarioLogin.isBlank() ? usuarioLogin.trim() : null);
+        } else {
+            item.setQuantidade(qtdAtual - qCancel);
+        }
+
         pedido.setAtualizadoEm(Instant.now());
         itemPedidoJpaRepository.save(item);
         pedidoJpaRepository.save(pedido);
@@ -450,6 +481,7 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
                         i.getQuantidade(),
                         i.getPrecoUnitario(),
                         i.getObservacao(),
+                        i.getPontoCarne(),
                         i.isCancelado(),
                         i.getCanceladoEm(),
                         i.getCanceladoPorLogin() != null ? i.getCanceladoPorLogin() : ""))
@@ -524,5 +556,10 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
                 .map(PagamentoPedidoEntity::getValor)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private static boolean produtoEhEspetinho(ProdutoEntity produto) {
+        return produto.getCategoria() != null
+                && NOME_CATEGORIA_ESPETINHOS.equalsIgnoreCase(produto.getCategoria().getNome().strip());
     }
 }

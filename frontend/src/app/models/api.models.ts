@@ -71,6 +71,8 @@ export interface Cliente {
   endereco: string | null;
 }
 
+export type PontoCarne = 'MAL_PASSADA' | 'AO_PONTO' | 'BEM_PASSADA';
+
 export interface Produto {
   id: number;
   nome: string;
@@ -113,6 +115,8 @@ export interface ItemPedido {
   quantidade: number;
   precoUnitario: number;
   observacao: string | null;
+  /** Ponto de cocção; obrigatório na API ao lançar item da categoria Espetinhos. */
+  pontoCarne?: PontoCarne | null;
   /** Item cancelado (lançamento indevido); não entra no total nem na comanda. */
   cancelado?: boolean;
   canceladoEm?: string | null;

@@ -2,14 +2,14 @@
  * Fallback quando não há impressão no servidor: bobina ~76&nbsp;mm de largura.
  *
  * Fonte **24px** monoespaçada (bem maior que o baseline antigo), **alinhada à esquerda**, + área mínima alta e rodapé em branco.
+ *
+ * Abre uma **nova aba/janela** com HTML via `blob:` e dispara `print()` **somente dentro dessa janela**.
+ * Evita chamar `print()` no contexto da SPA: no Chrome isso costuma bloquear o processo compartilhado e
+ * “travar” a tela do balcão até o diálogo de impressão fechar.
  */
 export function imprimirTextoTerminalBrowser(texto: string, tituloDocumento: string): void {
-  const w = window.open('', '_blank');
-  if (!w) {
-    return;
-  }
-
   const titulo = escapeHtml(tituloDocumento);
+  const textoJson = JSON.stringify(texto ?? '');
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -73,22 +73,43 @@ export function imprimirTextoTerminalBrowser(texto: string, tituloDocumento: str
     }
   </style>
 </head>
-<body><pre></pre></body>
+<body>
+  <pre id="pj-print-root"></pre>
+  <script>
+(function () {
+  var root = document.getElementById('pj-print-root');
+  if (root) root.textContent = ${textoJson};
+  function imprimir() {
+    setTimeout(function () {
+      window.focus();
+      window.print();
+    }, 100);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', imprimir, { once: true });
+  } else {
+    imprimir();
+  }
+})();
+  </script>
+</body>
 </html>`;
 
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
 
-  const pre = w.document.querySelector('pre');
-  if (pre) {
-    pre.appendChild(w.document.createTextNode(texto ?? ''));
+  const popup = window.open(
+    url,
+    '_blank',
+    'popup=yes,width=520,height=780,noopener,noreferrer',
+  );
+
+  if (!popup) {
+    URL.revokeObjectURL(url);
+    return;
   }
 
-  requestAnimationFrame(() => {
-    w.focus();
-    w.print();
-  });
+  window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
 }
 
 function escapeHtml(s: string): string {

@@ -22,25 +22,108 @@
   @if (pedido.status !== 'PAGO' && pedido.status !== 'CANCELADO') {
     <div class="add-box add-box--destaque">
       <h3>Adicionar item</h3>
-      <div class="row">
-        <div class="field">
-          <label>Produto</label>
-          <select [(ngModel)]="produtoId" name="prod">
-            @for (pr of produtos; track pr.id) {
-              <option [ngValue]="pr.id">
-                {{ pr.nome }} — {{ pr.preco | number : '1.2-2' }}
-                @if (pr.saldoEstoque != null) {
-                  · est. {{ pr.saldoEstoque }}
+      <div class="cardapio-add-block">
+        <button
+          type="button"
+          class="btn btn-outline cardapio-toggle full-width-touch"
+          [attr.aria-expanded]="cardapioPickerAberto"
+          (click)="toggleCardapioPicker()"
+        >
+          <span>{{ rotuloBotaoCardapio() }}</span>
+          <span class="cardapio-chevron" aria-hidden="true">{{ cardapioPickerAberto ? '▴' : '▾' }}</span>
+        </button>
+
+        @if (cardapioPickerAberto) {
+          <div class="cardapio-panel">
+            @if (categoriasParaCardapio().length === 0) {
+              <p class="cardapio-vazio">Nenhuma categoria com produto disponível.</p>
+            } @else {
+              <p class="cardapio-hint-cat" id="hint-cat-cardapio">Categorias</p>
+              <div class="cardapio-cat-grid" role="group" aria-labelledby="hint-cat-cardapio">
+                @for (c of categoriasParaCardapio(); track c.id) {
+                  <button
+                    type="button"
+                    class="btn-cardapio-cat"
+                    [class.btn-cardapio-cat--on]="categoriaAtivaId === c.id"
+                    [attr.aria-pressed]="categoriaAtivaId === c.id"
+                    (click)="selecionarCategoriaCardapio(c.id)"
+                  >
+                    {{ c.nome }}
+                  </button>
                 }
-              </option>
+              </div>
+
+              @if (categoriaAtivaId != null) {
+                <p class="cardapio-hint-prod" id="hint-prod-cardapio">Produtos</p>
+                @if (produtosNaCategoria(categoriaAtivaId).length === 0) {
+                  <p class="cardapio-vazio">Nenhum produto nesta categoria.</p>
+                } @else {
+                  <div class="field cardapio-prod-field">
+                    <label for="prod-cardapio-select">Produto</label>
+                    <select
+                      id="prod-cardapio-select"
+                      name="prodCardapio"
+                      [(ngModel)]="produtoId"
+                      (ngModelChange)="onProdutoIdChange()"
+                    >
+                      <option [ngValue]="null" disabled>Escolha o produto…</option>
+                      @for (pr of produtosNaCategoria(categoriaAtivaId); track pr.id) {
+                        <option [ngValue]="pr.id">
+                          {{ pr.nome }} — {{ pr.preco | number : '1.2-2' }}
+                          @if (pr.saldoEstoque != null) {
+                            · est. {{ pr.saldoEstoque }}
+                          }
+                        </option>
+                      }
+                    </select>
+                  </div>
+                }
+              } @else if (categoriasParaCardapio().length > 1) {
+                <p class="cardapio-placeholder subtle">Toque em uma categoria para ver os produtos.</p>
+              }
             }
-          </select>
-        </div>
+          </div>
+        }
+      </div>
+
+      <div class="row">
         <div class="field w-qty">
           <label>Qtd</label>
           <input type="number" min="1" [(ngModel)]="quantidade" name="qtd" />
         </div>
       </div>
+      @if (produtoSelecionadoEhEspetinho()) {
+        <div class="field ponto-carne-dropdown" #pontoDropdownRoot>
+          <button
+            type="button"
+            class="btn btn-ponto-dropdown-toggle full-width-touch"
+            [attr.aria-expanded]="pontoCarneMenuAberto"
+            aria-haspopup="listbox"
+            [attr.aria-controls]="pontoCarneMenuAberto ? 'ponto-carne-lista' : null"
+            (click)="alternarMenuPontoCarne(); $event.stopPropagation()"
+          >
+            <span>{{ rotuloPrincipalBotaoPonto() }}</span>
+            <span class="ponto-chevron" aria-hidden="true">{{ pontoCarneMenuAberto ? '▴' : '▾' }}</span>
+          </button>
+          @if (pontoCarneMenuAberto) {
+            <ul id="ponto-carne-lista" class="ponto-carne-dropdown-lista" role="listbox" aria-label="Ponto da carne">
+              @for (op of opcoesPontoCarne; track op.valor) {
+                <li role="presentation">
+                  <button
+                    type="button"
+                    class="btn-ponto-dropdown-item"
+                    role="option"
+                    [attr.aria-selected]="pontoCarneSelecao === op.valor"
+                    (click)="selecionarPontoCarne(op.valor); $event.stopPropagation()"
+                  >
+                    {{ op.rotulo }}
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
       <div class="field">
         <label>Observação</label>
         <input [(ngModel)]="observacao" name="obs" />
@@ -48,7 +131,14 @@
       @if (erroItem) {
         <p class="err">{{ erroItem }}</p>
       }
-      <button type="button" class="btn btn-primary" [disabled]="carregandoItem" (click)="adicionarItem()">Adicionar</button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="botaoAdicionarItemDesabilitado()"
+        (click)="adicionarItem()"
+      >
+        {{ carregandoItem ? 'Adicionando…' : 'Adicionar' }}
+      </button>
     </div>
   }
 
@@ -67,8 +157,17 @@
               [disabled]="cancelandoItemId !== null"
               (click)="cancelarItemPedido(it)"
             >
-              {{ cancelandoItemId === it.id ? '…' : 'Cancelar item' }}
+              {{
+                cancelandoItemId === it.id
+                  ? '…'
+                  : it.quantidade > 1
+                    ? 'Cancelar quantidade…'
+                    : 'Cancelar item'
+              }}
             </button>
+          }
+          @if (it.pontoCarne) {
+            <span class="o">Ponto: {{ rotuloPonto[it.pontoCarne] }}</span>
           }
           @if (it.observacao) {
             <span class="o">{{ it.observacao }}</span>
@@ -272,5 +371,54 @@
         }
       </div>
     </aside>
+  }
+
+  @if (modalCancelarItem) {
+    <div class="modal-cancel-qtd-overlay" (click)="fecharModalCancelarItem()"></div>
+    <div
+      class="modal-cancel-qtd"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-cancel-qtd-titulo"
+      (click)="$event.stopPropagation()"
+    >
+      <h3 id="modal-cancel-qtd-titulo">Cancelar quantidade</h3>
+      <p class="modal-cancel-qtd-sub">
+        <strong>{{ modalCancelarItem.produtoNome }}</strong>
+        <span class="nowrap"> · {{ modalCancelarItem.quantidade }}× no pedido</span>
+      </p>
+      <div class="field">
+        <label for="mqtd-cancel-input">Quantas unidades cancelar?</label>
+        <input
+          id="mqtd-cancel-input"
+          type="number"
+          name="qtdCancelModal"
+          [min]="1"
+          [max]="modalCancelarItem.quantidade"
+          step="1"
+          [(ngModel)]="qtdParaCancelarItem"
+          [disabled]="cancelandoItemId !== null"
+        />
+      </div>
+      <p class="hint-cancel-qtd subtle">
+        Só essas unidades saem do total e voltam ao estoque; o restante permanece no item.
+      </p>
+      @if (erroItem) {
+        <p class="err">{{ erroItem }}</p>
+      }
+      <div class="modal-cancel-qtd-acoes">
+        <button type="button" class="btn btn-ghost" [disabled]="cancelandoItemId !== null" (click)="fecharModalCancelarItem()">
+          Voltar
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="cancelandoItemId !== null"
+          (click)="confirmarCancelamentoQuantidade()"
+        >
+          {{ cancelandoItemId !== null ? 'Cancelando…' : 'Confirmar' }}
+        </button>
+      </div>
+    </div>
   }
 }
