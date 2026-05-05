@@ -285,6 +285,11 @@ export class MesasComponent implements OnInit, OnDestroy {
     }
   }
 
+  selecionarFormaModal(f: FormaPagamento): void {
+    this.formaPagamento = f;
+    this.onFormaModalChange();
+  }
+
   onFormaModalChange(): void {
     if (this.formaPagamento === 'DINHEIRO' && this.pedidoModal) {
       const r = this.restanteConta(this.pedidoModal);

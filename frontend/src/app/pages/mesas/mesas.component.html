@@ -150,16 +150,16 @@
         </button>
       } @else if (restanteConta(pedidoModal) > 0.005) {
         @if ((pedidoModal.pagamentos ?? []).length) {
-          <div class="modal-pg-list">
+          <div class="modal-pg-registros">
             <span class="modal-pg-cab">Pagamentos já registrados</span>
-            <ul>
+            <div class="modal-pg-chips" role="list">
               @for (pg of pedidoModal.pagamentos ?? []; track pg.id) {
-                <li>
-                  <span>{{ rotuloForma[pg.forma] }}</span>
-                  <span>{{ pg.valor | number : '1.2-2' }}</span>
-                </li>
+                <div class="modal-pg-chip" role="listitem">
+                  <span class="modal-pg-chip-forma">{{ rotuloForma[pg.forma] }}</span>
+                  <span class="modal-pg-chip-valor">R$ {{ pg.valor | number : '1.2-2' }}</span>
+                </div>
               }
-            </ul>
+            </div>
           </div>
         }
 
@@ -171,15 +171,28 @@
           }
         </div>
 
-        <div class="row-modal">
-          <div class="field">
-            <label for="forma-modal">Forma</label>
-            <select id="forma-modal" name="formaModal" [(ngModel)]="formaPagamento" (change)="onFormaModalChange()">
-              @for (f of formas; track f) {
-                <option [ngValue]="f">{{ rotuloForma[f] }}</option>
-              }
-            </select>
+        <div class="field forma-field">
+          <span class="forma-field-label" id="forma-modal-label">Forma de pagamento</span>
+          <div
+            class="forma-grid"
+            role="group"
+            aria-labelledby="forma-modal-label"
+          >
+            @for (f of formas; track f) {
+              <button
+                type="button"
+                class="forma-btn"
+                [class.forma-btn--selected]="formaPagamento === f"
+                [attr.aria-pressed]="formaPagamento === f"
+                (click)="selecionarFormaModal(f)"
+              >
+                {{ rotuloForma[f] }}
+              </button>
+            }
           </div>
+        </div>
+
+        <div class="row-modal">
           <div class="field w-valor-modal">
             <label for="valor-modal">Valor (conta)</label>
             <input id="valor-modal" type="number" min="0.01" step="0.01" [(ngModel)]="valorPagamento" name="valorModal" />
