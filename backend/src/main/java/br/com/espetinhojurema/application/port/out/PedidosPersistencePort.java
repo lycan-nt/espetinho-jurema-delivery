@@ -25,7 +25,8 @@ public interface PedidosPersistencePort {
     PedidoDetalheView adicionarItem(
             Long pedidoId, Long produtoId, int quantidade, String observacao, PontoCarne pontoCarne);
 
-    PedidoDetalheView cancelarItemPedido(Long pedidoId, Long itemPedidoId, String usuarioLogin);
+    PedidoDetalheView cancelarItemPedido(
+            Long pedidoId, Long itemPedidoId, String usuarioLogin, Integer quantidadeCancelar);
 
     PedidoDetalheView atualizarStatus(Long pedidoId, PedidoStatus novoStatus);
 

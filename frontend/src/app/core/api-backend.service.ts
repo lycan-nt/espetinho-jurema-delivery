@@ -187,8 +187,15 @@ export class ApiBackendService {
     });
   }
 
-  cancelarItemPedido(pedidoId: number, itemId: number): Observable<PedidoDetalhe> {
-    return this.http.post<PedidoDetalhe>(`${this.base}/pedidos/${pedidoId}/itens/${itemId}/cancelar`, {});
+  cancelarItemPedido(pedidoId: number, itemId: number, quantidade?: number | null): Observable<PedidoDetalhe> {
+    const body: Record<string, unknown> = {};
+    if (quantidade != null && Number.isFinite(quantidade) && quantidade > 0) {
+      body['quantidade'] = Math.floor(quantidade);
+    }
+    return this.http.post<PedidoDetalhe>(
+      `${this.base}/pedidos/${pedidoId}/itens/${itemId}/cancelar`,
+      body,
+    );
   }
 
   /** Garçom/churrasqueiro: após lançar itens, notifica o atendimento (alerta + comanda). */

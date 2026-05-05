@@ -203,7 +203,8 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
 
     @Override
     @Transactional
-    public PedidoDetalheView cancelarItemPedido(Long pedidoId, Long itemPedidoId, String usuarioLogin) {
+    public PedidoDetalheView cancelarItemPedido(
+            Long pedidoId, Long itemPedidoId, String usuarioLogin, Integer quantidadeCancelar) {
         ItemPedidoEntity item = itemPedidoJpaRepository
                 .findById(itemPedidoId)
                 .orElseThrow(() -> new BusinessException("Item não encontrado"));
@@ -218,20 +219,35 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
             throw new BusinessException("Item já cancelado");
         }
 
-        BigDecimal valorItem = item.getPrecoUnitario()
-                .multiply(BigDecimal.valueOf(item.getQuantidade()))
+        int qtdAtual = item.getQuantidade();
+        int qCancel = quantidadeCancelar != null ? quantidadeCancelar : qtdAtual;
+        if (qCancel <= 0) {
+            throw new BusinessException("Informe uma quantidade válida para cancelar.");
+        }
+        if (qCancel > qtdAtual) {
+            throw new BusinessException("Quantidade maior que a lançada neste item.");
+        }
+
+        BigDecimal valorRemover = item.getPrecoUnitario()
+                .multiply(BigDecimal.valueOf(qCancel))
                 .setScale(2, RoundingMode.HALF_UP);
-        BigDecimal novoTotal = totalItens(pedido).subtract(valorItem).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal novoTotal = totalItens(pedido).subtract(valorRemover).setScale(2, RoundingMode.HALF_UP);
         BigDecimal pago = somarPagamentos(pedido);
         if (pago.subtract(novoTotal).compareTo(EPS) > 0) {
             throw new BusinessException(
-                    "Não é possível cancelar: o valor já pago excede o total da conta após remover este item.");
+                    "Não é possível cancelar: o valor já pago excede o total da conta após remover esta quantidade.");
         }
 
-        estoqueOperacaoService.restaurarQuantidadeProduto(item.getProduto(), item.getQuantidade());
-        item.setCancelado(true);
-        item.setCanceladoEm(Instant.now());
-        item.setCanceladoPorLogin(usuarioLogin != null && !usuarioLogin.isBlank() ? usuarioLogin.trim() : null);
+        estoqueOperacaoService.restaurarQuantidadeProduto(item.getProduto(), qCancel);
+
+        if (qCancel >= qtdAtual) {
+            item.setCancelado(true);
+            item.setCanceladoEm(Instant.now());
+            item.setCanceladoPorLogin(usuarioLogin != null && !usuarioLogin.isBlank() ? usuarioLogin.trim() : null);
+        } else {
+            item.setQuantidade(qtdAtual - qCancel);
+        }
+
         pedido.setAtualizadoEm(Instant.now());
         itemPedidoJpaRepository.save(item);
         pedidoJpaRepository.save(pedido);

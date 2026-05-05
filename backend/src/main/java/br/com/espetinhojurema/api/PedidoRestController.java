@@ -1,6 +1,7 @@
 package br.com.espetinhojurema.api;
 
 import br.com.espetinhojurema.api.dto.AdicionarItemRequest;
+import br.com.espetinhojurema.api.dto.CancelarItemRequest;
 import br.com.espetinhojurema.api.dto.AtualizarPedidoStatusRequest;
 import br.com.espetinhojurema.api.dto.CriarPedidoAvulsoRequest;
 import br.com.espetinhojurema.api.dto.RegistroPagamentoRequest;
@@ -97,9 +98,11 @@ public class PedidoRestController {
     public PedidoDetalheView cancelarItem(
             @PathVariable Long id,
             @PathVariable Long itemId,
+            @Valid @RequestBody(required = false) CancelarItemRequest body,
             @AuthenticationPrincipal UsuarioPrincipal principal) {
+        Integer quantidade = body != null ? body.quantidade() : null;
         String login = principal != null ? principal.getUsername() : null;
-        return pedidosPersistencePort.cancelarItemPedido(id, itemId, login);
+        return pedidosPersistencePort.cancelarItemPedido(id, itemId, login, quantidade);
     }
 
     @PostMapping("/{id}/pagamentos")

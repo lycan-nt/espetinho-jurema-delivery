@@ -713,3 +713,60 @@
     max-width: none;
   }
 }
+
+.modal-cancel-qtd-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.modal-cancel-qtd {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(400px, calc(100vw - 2rem));
+  max-height: min(90vh, 520px);
+  overflow-y: auto;
+  z-index: 111;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.15rem 1.05rem;
+  padding-bottom: max(1.15rem, calc(1rem + env(safe-area-inset-bottom, 0px)));
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+.modal-cancel-qtd h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.modal-cancel-qtd-sub {
+  margin: 0 0 0.85rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.modal-cancel-qtd-sub strong {
+  color: var(--text);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.hint-cancel-qtd {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+}
+
+.modal-cancel-qtd-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+}

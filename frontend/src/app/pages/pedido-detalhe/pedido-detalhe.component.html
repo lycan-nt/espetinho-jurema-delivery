@@ -152,7 +152,13 @@
               [disabled]="cancelandoItemId !== null"
               (click)="cancelarItemPedido(it)"
             >
-              {{ cancelandoItemId === it.id ? '…' : 'Cancelar item' }}
+              {{
+                cancelandoItemId === it.id
+                  ? '…'
+                  : it.quantidade > 1
+                    ? 'Cancelar quantidade…'
+                    : 'Cancelar item'
+              }}
             </button>
           }
           @if (it.pontoCarne) {
@@ -360,5 +366,54 @@
         }
       </div>
     </aside>
+  }
+
+  @if (modalCancelarItem) {
+    <div class="modal-cancel-qtd-overlay" (click)="fecharModalCancelarItem()"></div>
+    <div
+      class="modal-cancel-qtd"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-cancel-qtd-titulo"
+      (click)="$event.stopPropagation()"
+    >
+      <h3 id="modal-cancel-qtd-titulo">Cancelar quantidade</h3>
+      <p class="modal-cancel-qtd-sub">
+        <strong>{{ modalCancelarItem.produtoNome }}</strong>
+        <span class="nowrap"> · {{ modalCancelarItem.quantidade }}× no pedido</span>
+      </p>
+      <div class="field">
+        <label for="mqtd-cancel-input">Quantas unidades cancelar?</label>
+        <input
+          id="mqtd-cancel-input"
+          type="number"
+          name="qtdCancelModal"
+          [min]="1"
+          [max]="modalCancelarItem.quantidade"
+          step="1"
+          [(ngModel)]="qtdParaCancelarItem"
+          [disabled]="cancelandoItemId !== null"
+        />
+      </div>
+      <p class="hint-cancel-qtd subtle">
+        Só essas unidades saem do total e voltam ao estoque; o restante permanece no item.
+      </p>
+      @if (erroItem) {
+        <p class="err">{{ erroItem }}</p>
+      }
+      <div class="modal-cancel-qtd-acoes">
+        <button type="button" class="btn btn-ghost" [disabled]="cancelandoItemId !== null" (click)="fecharModalCancelarItem()">
+          Voltar
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="cancelandoItemId !== null"
+          (click)="confirmarCancelamentoQuantidade()"
+        >
+          {{ cancelandoItemId !== null ? 'Cancelando…' : 'Confirmar' }}
+        </button>
+      </div>
+    </div>
   }
 }

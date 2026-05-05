@@ -104,6 +104,10 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   /** Item em processo de cancelamento (evita cliques duplos). */
   cancelandoItemId: number | null = null;
 
+  /** Modal: cancelar só parte da quantidade quando {@link ItemPedido.quantidade} > 1. */
+  modalCancelarItem: ItemPedido | null = null;
+  qtdParaCancelarItem = 1;
+
   /** Painel lateral com ações (cozinha, conta, impressão, transferência). */
   panelAcoesAberto = false;
 
@@ -277,6 +281,10 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
       this.cardapioPickerAberto = false;
       return;
     }
+    if (this.modalCancelarItem) {
+      this.fecharModalCancelarItem();
+      return;
+    }
     if (this.panelAcoesAberto) {
       this.fecharPanelAcoes();
     }
@@ -376,7 +384,13 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   }
 
   cancelarItemPedido(it: ItemPedido): void {
-    if (!this.pedido) {
+    if (!this.pedido || !this.podeCancelarItemPedido(it)) {
+      return;
+    }
+    if (it.quantidade > 1) {
+      this.erroItem = null;
+      this.modalCancelarItem = it;
+      this.qtdParaCancelarItem = 1;
       return;
     }
     const msg =
@@ -384,12 +398,45 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
     if (typeof globalThis.confirm === 'function' && !globalThis.confirm(msg)) {
       return;
     }
+    this.executarCancelamentoItem(it);
+  }
+
+  fecharModalCancelarItem(): void {
+    this.modalCancelarItem = null;
+  }
+
+  confirmarCancelamentoQuantidade(): void {
+    const it = this.modalCancelarItem;
+    if (!this.pedido || !it || this.cancelandoItemId !== null) {
+      return;
+    }
+    let q = Math.floor(Number(this.qtdParaCancelarItem));
+    if (!Number.isFinite(q) || q < 1) {
+      q = 1;
+    }
+    if (q > it.quantidade) {
+      q = it.quantidade;
+    }
+    this.executarCancelamentoItem(it, q);
+  }
+
+  /** Sem body na API quando {@code quantidade} omissa = cancelar linha inteira. */
+  private executarCancelamentoItem(it: ItemPedido, quantidade?: number): void {
+    if (!this.pedido) {
+      return;
+    }
+    const enviarQ =
+      quantidade != null &&
+      Number.isFinite(quantidade) &&
+      quantidade > 0 &&
+      quantidade < it.quantidade;
     this.cancelandoItemId = it.id;
     this.erroItem = null;
-    this.api.cancelarItemPedido(this.pedido.id, it.id).subscribe({
+    this.api.cancelarItemPedido(this.pedido.id, it.id, enviarQ ? quantidade : undefined).subscribe({
       next: (p) => {
         this.pedido = p;
         this.cancelandoItemId = null;
+        this.fecharModalCancelarItem();
       },
       error: (e) => {
         this.cancelandoItemId = null;
