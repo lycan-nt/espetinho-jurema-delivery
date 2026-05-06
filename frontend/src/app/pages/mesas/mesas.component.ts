@@ -333,7 +333,6 @@ export class MesasComponent implements OnInit, OnDestroy {
         this.sincronizarFormPagamentoModal();
         this.carregar();
         if (atual.status === 'PAGO') {
-          this.api.imprimirComprovante(atual.id, { fechamento: true });
           this.fecharModalQuitarConta();
           this.fecharDrawer();
         }
@@ -355,7 +354,6 @@ export class MesasComponent implements OnInit, OnDestroy {
     this.api.patchPedidoStatus(p.id, 'PAGO').subscribe({
       next: (pedido) => {
         this.carregandoPagamentoModal = false;
-        this.api.imprimirComprovante(pedido.id, { fechamento: true });
         this.carregar();
         this.fecharModalQuitarConta();
         this.fecharDrawer();

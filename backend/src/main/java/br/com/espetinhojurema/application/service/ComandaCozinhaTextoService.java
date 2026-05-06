@@ -21,10 +21,7 @@ import org.springframework.stereotype.Service;
  *      - Ponto: bem passada
  *      - Obs.: sem cebola (exemplo livre)
  * ................................
- * TOTAL DA CONTA: R$ 24,00
- * ................................
  * N.Pessoas: 2
- * Atendente: JODARIO
  * 29/04/2026               21:22
  * ................................
  *  ** NAO E DOCUMENTO FISCAL **
@@ -43,7 +40,25 @@ public class ComandaCozinhaTextoService {
     /** Avanço para poder rasgar a bobina confortavelmente. */
     private static final String FEED_FINAL = "\n".repeat(8);
 
+    /** Gera comanda sem total e sem filtro de itens — usado para solicitação de fechamento. */
     public String gerar(PedidoDetalheView p) {
+        return gerar(p, false, null);
+    }
+
+    /**
+     * @param incluirTotal {@code true} para solicitação de fechamento (precisa do total);
+     *                     {@code false} para comanda de cozinha comum.
+     */
+    public String gerar(PedidoDetalheView p, boolean incluirTotal) {
+        return gerar(p, incluirTotal, null);
+    }
+
+    /**
+     * @param incluirTotal  {@code true} para solicitação de fechamento (imprime o total).
+     * @param itemIdCorte   Quando não-nulo, imprime apenas itens com {@code id > itemIdCorte} (itens novos).
+     *                      {@code null} imprime todos os itens ativos.
+     */
+    public String gerar(PedidoDetalheView p, boolean incluirTotal, Long itemIdCorte) {
         StringBuilder sb = new StringBuilder();
 
         // ── Cabeçalho: empresa à esquerda, pedido à direita ──────────────────
@@ -73,6 +88,7 @@ public class ComandaCozinhaTextoService {
         boolean temItens = false;
         for (var item : p.itens()) {
             if (item.cancelado()) continue;
+            if (itemIdCorte != null && item.id() <= itemIdCorte) continue;
             temItens = true;
             sb.append(String.format("%3dx %s%n", item.quantidade(), item.produtoNome()));
             if (item.pontoCarne() != null) {
@@ -94,11 +110,12 @@ public class ComandaCozinhaTextoService {
         // ── Separador ────────────────────────────────────────────────────────
         sb.append(separador()).append('\n');
 
-        BigDecimal total = p.total() != null ? p.total() : BigDecimal.ZERO;
-        sb.append("TOTAL DA CONTA: R$ ").append(formatValorPt(total)).append('\n');
-
-        // ── Separador ────────────────────────────────────────────────────────
-        sb.append(separador()).append('\n');
+        // ── Total: apenas para solicitação de fechamento ──────────────────────
+        if (incluirTotal) {
+            BigDecimal total = p.total() != null ? p.total() : BigDecimal.ZERO;
+            sb.append("TOTAL DA CONTA: R$ ").append(formatValorPt(total)).append('\n');
+            sb.append(separador()).append('\n');
+        }
 
         // ── Rodapé: info do pedido ────────────────────────────────────────────
         if (p.clienteNome() != null && !p.clienteNome().isBlank()) {
@@ -134,9 +151,7 @@ public class ComandaCozinhaTextoService {
     private static String formatValorPt(BigDecimal valor) {
         String s = valor.setScale(2, RoundingMode.HALF_UP).toPlainString();
         int p = s.indexOf('.');
-        if (p < 0) {
-            return s + ",00";
-        }
+        if (p < 0) return s + ",00";
         return s.substring(0, p) + ',' + s.substring(p + 1);
     }
 

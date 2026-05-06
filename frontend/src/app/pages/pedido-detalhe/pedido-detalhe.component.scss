@@ -183,42 +183,20 @@
   margin-bottom: 0.85rem;
 }
 
-.cardapio-toggle {
-  width: 100%;
-  min-height: 2.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.65rem;
-  text-align: left;
-}
-
-.cardapio-chevron {
-  flex-shrink: 0;
-  font-size: 0.72rem;
-  opacity: 0.85;
-}
-
 .cardapio-panel {
-  margin-top: 0.65rem;
   padding: 0.75rem;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-elevated);
 }
 
-.cardapio-hint-cat,
 .cardapio-hint-prod {
-  margin: 0 0 0.45rem;
+  margin: 0.85rem 0 0.45rem;
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
-}
-
-.cardapio-hint-prod {
-  margin-top: 0.85rem;
 }
 
 .cardapio-cat-grid {

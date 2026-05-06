@@ -53,7 +53,7 @@ public class SolicitacaoFechamentoComandaOperacaoService {
         var tipo = TipoAlertaAtendimento.SOLICITACAO_FECHAMENTO_COMANDA;
         String alertaId = alertasAtendimentoPersistencePort
                 .encontrarAlertaIdPendente(pedidoId, tipo)
-                .orElseGet(() -> alertasAtendimentoPersistencePort.criarPendente(pedidoId, mesaNumero, tipo));
+                .orElseGet(() -> alertasAtendimentoPersistencePort.criarPendente(pedidoId, mesaNumero, tipo, null));
 
         atendimentoAlertaPublisherPort.notificarAtendimento(
                 tipo.name(), pedidoId, mesaNumero, alertaId);

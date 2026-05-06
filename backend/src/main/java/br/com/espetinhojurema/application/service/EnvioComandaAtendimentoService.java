@@ -1,7 +1,9 @@
 package br.com.espetinhojurema.application.service;
 
+import br.com.espetinhojurema.application.model.ItemPedidoView;
 import br.com.espetinhojurema.application.model.PedidoDetalheView;
 import br.com.espetinhojurema.application.port.out.AlertasAtendimentoPersistencePort;
+import java.util.OptionalLong;
 import br.com.espetinhojurema.application.port.out.AtendimentoAlertaPublisherPort;
 import br.com.espetinhojurema.application.port.out.PedidosPersistencePort;
 import br.com.espetinhojurema.domain.exception.BusinessException;
@@ -48,8 +50,11 @@ public class EnvioComandaAtendimentoService {
         if (pedido.mesaNumero() == null) {
             throw new BusinessException("Pedido sem mesa associada");
         }
+        OptionalLong maxId = pedido.itens().stream().mapToLong(ItemPedidoView::id).max();
+        Long itemIdMax = maxId.isPresent() ? maxId.getAsLong() : null;
+
         var tipoComanda = TipoAlertaAtendimento.COMANDA_ENVIADA;
-        String alertaId = alertasAtendimentoPersistencePort.criarPendente(pedidoId, pedido.mesaNumero(), tipoComanda);
+        String alertaId = alertasAtendimentoPersistencePort.criarPendente(pedidoId, pedido.mesaNumero(), tipoComanda, itemIdMax);
         atendimentoAlertaPublisherPort.notificarAtendimento(
                 tipoComanda.name(), pedidoId, pedido.mesaNumero(), alertaId);
         return pedidosPersistencePort

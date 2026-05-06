@@ -10,7 +10,8 @@ public record AlertaAtendimentoRegistroView(
         Instant criadoEm,
         Instant reconhecidoEm,
         String reconhecidoPor,
-        TipoAlertaAtendimento tipo) {
+        TipoAlertaAtendimento tipo,
+        Long itemIdMax) {
     public boolean pendente() {
         return reconhecidoEm == null;
     }

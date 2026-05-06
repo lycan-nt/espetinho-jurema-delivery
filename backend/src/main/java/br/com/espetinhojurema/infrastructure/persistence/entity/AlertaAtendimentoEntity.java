@@ -38,6 +38,14 @@ public class AlertaAtendimentoEntity {
     @Column(length = 48)
     private TipoAlertaAtendimento tipo;
 
+    /**
+     * Snapshot do maior item_id presente no pedido no momento em que a comanda foi enviada.
+     * Permite que a próxima comanda imprima apenas os itens adicionados depois deste ponto.
+     * {@code null} para alertas que não sejam {@code COMANDA_ENVIADA}.
+     */
+    @Column(name = "item_id_max")
+    private Long itemIdMax;
+
     public String getId() {
         return id;
     }
@@ -92,5 +100,13 @@ public class AlertaAtendimentoEntity {
 
     public void setTipo(TipoAlertaAtendimento tipo) {
         this.tipo = tipo;
+    }
+
+    public Long getItemIdMax() {
+        return itemIdMax;
+    }
+
+    public void setItemIdMax(Long itemIdMax) {
+        this.itemIdMax = itemIdMax;
     }
 }

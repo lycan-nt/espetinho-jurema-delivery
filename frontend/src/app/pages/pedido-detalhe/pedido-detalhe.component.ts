@@ -72,8 +72,6 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   pedido: PedidoDetalhe | null = null;
   produtos: Produto[] = [];
   categorias: CategoriaCardapio[] = [];
-  /** Painel “Cardápio”: categorias e produtos em botões (mobile-first). */
-  cardapioPickerAberto = false;
   categoriaAtivaId: number | null = null;
   produtoId: number | null = null;
   quantidade = 1;
@@ -155,27 +153,6 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
       out.push({ id: CAT_OUTROS_ID, nome: 'Outros' });
     }
     return out;
-  }
-
-  toggleCardapioPicker(): void {
-    this.cardapioPickerAberto = !this.cardapioPickerAberto;
-    if (this.cardapioPickerAberto) {
-      const cats = this.categoriasParaCardapio();
-      if (cats.length === 1) {
-        this.categoriaAtivaId = cats[0].id;
-      }
-    }
-  }
-
-  rotuloBotaoCardapio(): string {
-    if (this.cardapioPickerAberto) {
-      return 'Ocultar cardápio';
-    }
-    const p = this.produtoPorId(this.produtoId);
-    if (p) {
-      return `Cardápio · ${p.nome}`;
-    }
-    return 'Cardápio · escolher produto';
   }
 
   selecionarCategoriaCardapio(catId: number): void {
@@ -263,9 +240,10 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
           this.produtos = produtos;
           this.categorias = categorias;
           this.produtoId = null;
-          this.categoriaAtivaId = null;
           this.pontoCarneSelecao = null;
           this.pontoCarneMenuAberto = false;
+          const cats = this.categoriasParaCardapio();
+          this.categoriaAtivaId = cats.length > 0 ? cats[0].id : null;
         },
       });
 
@@ -286,10 +264,6 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   onEscapeFecharAcoes(): void {
     if (this.pontoCarneMenuAberto) {
       this.pontoCarneMenuAberto = false;
-      return;
-    }
-    if (this.cardapioPickerAberto) {
-      this.cardapioPickerAberto = false;
       return;
     }
     if (this.modalCancelarItem) {
@@ -492,9 +466,6 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
       next: (p) => {
         this.pedido = p;
         this.panelAcoesAberto = false;
-        if (p.status === 'PAGO' && this.podeVerPagamentoCaixa()) {
-          this.api.imprimirComprovante(p.id, { fechamento: true });
-        }
       },
       error: (e) => (this.erroPagamento = e?.error?.erro ?? 'Erro ao atualizar status.'),
     });
@@ -523,13 +494,11 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
       next: (p) => {
         this.pedido = p;
         this.carregandoPagamento = false;
+        this.panelAcoesAberto = false;
         const r = this.restanteConta(p);
         this.valorPagamento = r > 0 ? Math.round(r * 100) / 100 : 0;
         if (this.formaPagamento === 'DINHEIRO') {
           this.valorRecebidoDinheiro = this.valorPagamento || null;
-        }
-        if (p.status === 'PAGO' && this.podeVerPagamentoCaixa()) {
-          this.api.imprimirComprovante(p.id, { fechamento: true });
         }
       },
       error: (e) => {
