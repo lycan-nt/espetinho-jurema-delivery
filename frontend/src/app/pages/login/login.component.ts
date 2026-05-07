@@ -16,6 +16,7 @@ export class LoginComponent implements OnInit {
 
   login = '';
   senha = '';
+  senhaVisivel = false;
   carregando = false;
   erro: string | null = null;
 
@@ -30,6 +31,10 @@ export class LoginComponent implements OnInit {
       senhaField.focus();
       senhaField.select();
     }
+  }
+
+  alternarVisibilidadeSenha(): void {
+    this.senhaVisivel = !this.senhaVisivel;
   }
 
   entrar(): void {
