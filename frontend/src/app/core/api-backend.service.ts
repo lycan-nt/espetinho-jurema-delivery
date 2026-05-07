@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { imprimirTextoTerminalBrowser } from './impressao-browser.util';
 import {
   CaixaStatus,
@@ -281,6 +282,42 @@ export class ApiBackendService {
         imprimirTextoTerminalBrowser(texto, titulo);
       },
     });
+  }
+
+  /** Texto da comanda de cozinha (todos os itens ativos), para reimpressão. */
+  getComandaCozinhaTexto(pedidoId: number): Observable<string> {
+    return this.http.get(`${this.base}/pedidos/${pedidoId}/comanda-cozinha`, {
+      responseType: 'text',
+    });
+  }
+
+  /**
+   * Comanda completa na térmica (CUPS) se configurado; senão abre impressão no navegador (igual ao cupom).
+   * Completa após tentativa de impressão (ou erro tratado).
+   */
+  imprimirComandaCozinha(pedidoId: number): Observable<void> {
+    return this.http
+      .post<ImprimirLocalResponse>(
+        `${this.base}/pedidos/${pedidoId}/comanda-cozinha/imprimir-local`,
+        {},
+      )
+      .pipe(
+        switchMap((res) => {
+          if (res.impressoServidor) {
+            return of(undefined);
+          }
+          return this.abrirPreviaComandaNoNavegador$(pedidoId);
+        }),
+        catchError(() => this.abrirPreviaComandaNoNavegador$(pedidoId)),
+      );
+  }
+
+  private abrirPreviaComandaNoNavegador$(pedidoId: number): Observable<void> {
+    return this.getComandaCozinhaTexto(pedidoId).pipe(
+      tap((texto) => imprimirTextoTerminalBrowser(texto, 'Comanda cozinha')),
+      map(() => undefined),
+      catchError(() => of(undefined)),
+    );
   }
 
   getImpressaoConfig(): Observable<ImpressaoConfig> {

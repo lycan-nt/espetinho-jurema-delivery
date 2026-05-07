@@ -2,7 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, finalize, takeUntil } from 'rxjs';
 import { ApiBackendService } from '../../core/api-backend.service';
 import { AuthService } from '../../core/auth.service';
 import { RealtimeService } from '../../core/realtime.service';
@@ -63,6 +63,7 @@ export class MesasComponent implements OnInit, OnDestroy {
   carregandoPagamentoModal = false;
   erroPagamentoModal: string | null = null;
   readonly atalhosValor = [2, 5, 10, 20, 50, 100];
+  carregandoImprimirComanda = false;
 
   ngOnInit(): void {
     this.carregar();
@@ -180,6 +181,23 @@ export class MesasComponent implements OnInit, OnDestroy {
 
   podeQuitarContaNoCaixa(): boolean {
     return this.auth.usuario()?.perfil === 'ATENDIMENTO';
+  }
+
+  /** Mesma comanda completa da cozinha que no detalhe do pedido (balcão). */
+  podeImprimirComandaCozinhaDrawer(): boolean {
+    return this.podeQuitarContaNoCaixa() && !!this.mesaSelecionada?.pedidoAbertoId;
+  }
+
+  imprimirComandaCozinhaDrawer(): void {
+    const id = this.mesaSelecionada?.pedidoAbertoId;
+    if (!id || !this.podeImprimirComandaCozinhaDrawer() || this.carregandoImprimirComanda) {
+      return;
+    }
+    this.carregandoImprimirComanda = true;
+    this.api
+      .imprimirComandaCozinha(id)
+      .pipe(finalize(() => (this.carregandoImprimirComanda = false)))
+      .subscribe();
   }
 
   podeSolicitarFechamentoComandaChurrasqueiro(): boolean {

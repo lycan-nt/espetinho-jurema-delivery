@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, filter, forkJoin, map, of, Subject, switchMap, takeUntil } from 'rxjs';
+import { catchError, filter, finalize, forkJoin, map, of, Subject, switchMap, takeUntil } from 'rxjs';
 import { ApiBackendService } from '../../core/api-backend.service';
 import { AuthService } from '../../core/auth.service';
 import { RealtimeService } from '../../core/realtime.service';
@@ -92,6 +92,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   valorRecebidoDinheiro: number | null = null;
   carregandoPagamento = false;
   carregandoEnviarComanda = false;
+  carregandoImprimirComanda = false;
 
   mesasParaTransferir: MesaComOcupacao[] = [];
   mesaDestinoTransferirId: number | null = null;
@@ -513,6 +514,12 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
     return this.auth.usuario()?.perfil === 'ATENDIMENTO';
   }
 
+  /** Comanda térmica completa (reimpressão) — atendimento, pedido de mesa. */
+  podeImprimirComandaCozinha(): boolean {
+    const p = this.pedido;
+    return !!p && this.auth.usuario()?.perfil === 'ATENDIMENTO' && p.tipo === 'MESA';
+  }
+
   podeEnviarComanda(): boolean {
     const p = this.pedido;
     const u = this.auth.usuario();
@@ -565,6 +572,21 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
     }
     this.api.imprimirComprovante(this.pedido.id, { fiscal });
     this.panelAcoesAberto = false;
+  }
+
+  imprimirComandaCozinha(): void {
+    if (!this.pedido || this.carregandoImprimirComanda) {
+      return;
+    }
+    this.carregandoImprimirComanda = true;
+    this.api
+      .imprimirComandaCozinha(this.pedido.id)
+      .pipe(finalize(() => (this.carregandoImprimirComanda = false)))
+      .subscribe({
+        complete: () => {
+          this.panelAcoesAberto = false;
+        },
+      });
   }
 
   abrirPanelAcoes(): void {

@@ -300,6 +300,16 @@
           <div class="acoes-grupo acoes-grupo--imprimir">
             <span class="acoes-label">Imprimir</span>
             <div class="acoes-botoes">
+              @if (podeImprimirComandaCozinha()) {
+                <button
+                  type="button"
+                  class="btn btn-ghost acoes-chip"
+                  [disabled]="carregandoImprimirComanda"
+                  (click)="imprimirComandaCozinha()"
+                >
+                  {{ carregandoImprimirComanda ? 'Imprimindo…' : 'Comanda cozinha' }}
+                </button>
+              }
               <button type="button" class="btn btn-ghost acoes-chip" (click)="imprimir(false)">Cupom</button>
               <button type="button" class="btn btn-ghost acoes-chip" (click)="imprimir(true)">Ref. fiscal</button>
             </div>

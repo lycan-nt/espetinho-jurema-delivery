@@ -67,6 +67,16 @@
       <button type="button" class="btn btn-primary full" (click)="irPedido(mesaSelecionada)">
         Abrir pedido #{{ mesaSelecionada.pedidoAbertoId }}
       </button>
+      @if (podeImprimirComandaCozinhaDrawer()) {
+        <button
+          type="button"
+          class="btn btn-outline full"
+          [disabled]="carregandoImprimirComanda"
+          (click)="imprimirComandaCozinhaDrawer()"
+        >
+          {{ carregandoImprimirComanda ? 'Imprimindo…' : 'Imprimir comanda cozinha' }}
+        </button>
+      }
       @if (podeQuitarContaNoCaixa()) {
         <button type="button" class="btn btn-outline full" (click)="abrirModalQuitarConta()">Quitar conta</button>
       }

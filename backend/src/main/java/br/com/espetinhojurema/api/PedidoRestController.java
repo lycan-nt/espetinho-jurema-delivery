@@ -153,6 +153,22 @@ public class PedidoRestController {
         return comprovanteTextoService.gerar(pedido, fiscal);
     }
 
+    /**
+     * Comanda de cozinha completa (todos os itens ativos), para reimpressão — mesmo layout do fluxo por alerta,
+     * sem filtro de “itens novos”.
+     */
+    @GetMapping(value = "/{id}/comanda-cozinha", produces = MediaType.TEXT_PLAIN_VALUE + ";charset=UTF-8")
+    public String comandaCozinha(@PathVariable Long id) {
+        return pedidoImpressaoLocalService.textoComandaCozinhaCompleta(id);
+    }
+
+    /** Envia comanda completa para a fila CUPS, quando configurada (senão o cliente usa só o GET + navegador). */
+    @PostMapping("/{id}/comanda-cozinha/imprimir-local")
+    @PreAuthorize("hasRole('ATENDIMENTO')")
+    public ImprimirLocalResult imprimirComandaCozinhaLocal(@PathVariable Long id) {
+        return pedidoImpressaoLocalService.imprimirComandaCozinhaLocal(id);
+    }
+
     /** Envia texto do cupom/fechamento para a fila CUPS configurada no servidor (Mac/Linux), quando houver. */
     @PostMapping("/{id}/imprimir-local")
     @PreAuthorize("hasRole('ATENDIMENTO')")
