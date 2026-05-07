@@ -2,6 +2,7 @@ package br.com.espetinhojurema.application.service;
 
 import br.com.espetinhojurema.application.model.PedidoDetalheView;
 import br.com.espetinhojurema.domain.model.FormaPagamento;
+import br.com.espetinhojurema.domain.model.PedidoStatus;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.ZoneId;
@@ -77,6 +78,14 @@ public class ComprovanteTextoService {
             sb.append("Pago: ")
                     .append(pedido.totalPago().setScale(2, RoundingMode.HALF_UP))
                     .append(" | Restante: ")
+                    .append(pedido.restante().setScale(2, RoundingMode.HALF_UP))
+                    .append('\n');
+        } else if (pedido.status() != PedidoStatus.PAGO
+                && pedido.status() != PedidoStatus.CANCELADO
+                && pedido.total().compareTo(BigDecimal.ZERO) > 0) {
+            sb.append("Ja pago: ")
+                    .append(pedido.totalPago().setScale(2, RoundingMode.HALF_UP))
+                    .append(" | Falta pagar: ")
                     .append(pedido.restante().setScale(2, RoundingMode.HALF_UP))
                     .append('\n');
         }

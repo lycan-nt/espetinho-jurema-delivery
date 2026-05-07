@@ -1,6 +1,7 @@
 package br.com.espetinhojurema.application.service;
 
 import br.com.espetinhojurema.application.model.PedidoDetalheView;
+import br.com.espetinhojurema.domain.model.PedidoStatus;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.ZoneId;
@@ -110,10 +111,20 @@ public class ComandaCozinhaTextoService {
         // ── Separador ────────────────────────────────────────────────────────
         sb.append(separador()).append('\n');
 
-        // ── Total: apenas para solicitação de fechamento ──────────────────────
+        // ── Total e valores já quitados: solicitação de fechamento ────────────
         if (incluirTotal) {
             BigDecimal total = p.total() != null ? p.total() : BigDecimal.ZERO;
+            BigDecimal pago = p.totalPago() != null ? p.totalPago() : BigDecimal.ZERO;
+            BigDecimal rest = p.restante() != null ? p.restante() : total.subtract(pago);
+            if (rest.compareTo(BigDecimal.ZERO) < 0) {
+                rest = BigDecimal.ZERO;
+            }
             sb.append("TOTAL DA CONTA: R$ ").append(formatValorPt(total)).append('\n');
+            sb.append("JA PAGO: R$ ").append(formatValorPt(pago)).append('\n');
+            sb.append("FALTA PAGAR: R$ ").append(formatValorPt(rest)).append('\n');
+            if (p.status() != PedidoStatus.PAGO && pago.compareTo(BigDecimal.ZERO) > 0) {
+                sb.append("(conta em aberto - parcial)\n");
+            }
             sb.append(separador()).append('\n');
         }
 
