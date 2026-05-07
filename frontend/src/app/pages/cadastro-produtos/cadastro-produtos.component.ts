@@ -1,8 +1,10 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiBackendService } from '../../core/api-backend.service';
 import { CategoriaCardapio, Produto } from '../../models/api.models';
+
+type DrawerModo = 'novo' | 'editar';
 
 @Component({
   selector: 'app-cadastro-produtos',
@@ -19,22 +21,19 @@ export class CadastroProdutosComponent implements OnInit {
   carregando = false;
   erro: string | null = null;
 
-  novoNome = '';
-  novaDesc = '';
-  novoPreco: number | null = null;
-  novoCatId: number | null = null;
-  novoCod = '';
-  novoAtivo = true;
-  salvandoNovo = false;
+  // ── Drawer ──────────────────────────────────────────────────────────────
+  drawerAberto = false;
+  drawerModo: DrawerModo = 'novo';
+  drawerProdutoId: number | null = null;
 
-  editandoId: number | null = null;
-  editNome = '';
-  editDesc = '';
-  editPreco: number | null = null;
-  editCatId: number | null = null;
-  editCod = '';
-  editAtivo = true;
-  salvandoEdit = false;
+  formNome = '';
+  formDesc = '';
+  formPreco: number | null = null;
+  formCatId: number | null = null;
+  formCod = '';
+  formAtivo = true;
+  salvando = false;
+  erroForm: string | null = null;
 
   ngOnInit(): void {
     this.carregarTudo();
@@ -50,9 +49,6 @@ export class CadastroProdutosComponent implements OnInit {
           next: (p) => {
             this.lista = p;
             this.carregando = false;
-            if (this.novoCatId == null && cats.length > 0) {
-              this.novoCatId = cats[0].id;
-            }
           },
           error: (e) => {
             this.carregando = false;
@@ -67,87 +63,87 @@ export class CadastroProdutosComponent implements OnInit {
     });
   }
 
-  criar(): void {
-    if (!this.novoNome.trim() || this.novoPreco == null || this.novoCatId == null) {
-      this.erro = 'Preencha nome, preço e categoria.';
-      return;
-    }
-    if (this.novoPreco < 0) {
-      this.erro = 'Preço inválido.';
-      return;
-    }
-    this.salvandoNovo = true;
-    this.erro = null;
-    this.api
-      .postAdminProduto({
-        nome: this.novoNome.trim(),
-        descricao: this.novaDesc.trim() || null,
-        preco: this.novoPreco,
-        categoriaId: this.novoCatId,
-        codigoImpressao: this.novoCod.trim() || null,
-        ativo: this.novoAtivo,
-      })
-      .subscribe({
-        next: () => {
-          this.salvandoNovo = false;
-          this.novoNome = '';
-          this.novaDesc = '';
-          this.novoPreco = null;
-          this.novoCod = '';
-          this.novoAtivo = true;
-          this.carregarTudo();
-        },
-        error: (e) => {
-          this.salvandoNovo = false;
-          this.erro = e?.error?.erro ?? 'Não foi possível criar o produto.';
-        },
-      });
+  abrirNovo(): void {
+    this.drawerModo = 'novo';
+    this.drawerProdutoId = null;
+    this.formNome = '';
+    this.formDesc = '';
+    this.formPreco = null;
+    this.formCatId = this.categorias.length > 0 ? this.categorias[0].id : null;
+    this.formCod = '';
+    this.formAtivo = true;
+    this.erroForm = null;
+    this.salvando = false;
+    this.drawerAberto = true;
   }
 
-  iniciarEdicao(p: Produto): void {
-    this.editandoId = p.id;
-    this.editNome = p.nome;
-    this.editDesc = p.descricao ?? '';
-    this.editPreco = p.preco;
-    this.editCatId = p.categoriaId;
-    this.editCod = p.codigoImpressao ?? '';
-    this.editAtivo = p.ativo;
-    this.erro = null;
+  abrirEditar(p: Produto): void {
+    this.drawerModo = 'editar';
+    this.drawerProdutoId = p.id;
+    this.formNome = p.nome;
+    this.formDesc = p.descricao ?? '';
+    this.formPreco = p.preco;
+    this.formCatId = p.categoriaId;
+    this.formCod = p.codigoImpressao ?? '';
+    this.formAtivo = p.ativo;
+    this.erroForm = null;
+    this.salvando = false;
+    this.drawerAberto = true;
   }
 
-  cancelarEdicao(): void {
-    this.editandoId = null;
+  fecharDrawer(): void {
+    if (this.salvando) return;
+    this.drawerAberto = false;
   }
 
-  salvarEdicao(): void {
-    if (this.editandoId == null || !this.editNome.trim() || this.editPreco == null || this.editCatId == null) {
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.fecharDrawer();
+  }
+
+  salvar(): void {
+    if (!this.formNome.trim() || this.formPreco == null || this.formCatId == null) {
+      this.erroForm = 'Preencha nome, preço e categoria.';
       return;
     }
-    if (this.editPreco < 0) {
-      this.erro = 'Preço inválido.';
+    if (this.formPreco < 0) {
+      this.erroForm = 'Preço inválido.';
       return;
     }
-    this.salvandoEdit = true;
-    this.erro = null;
-    this.api
-      .putAdminProduto(this.editandoId, {
-        nome: this.editNome.trim(),
-        descricao: this.editDesc.trim() || null,
-        preco: this.editPreco,
-        categoriaId: this.editCatId,
-        codigoImpressao: this.editCod.trim() || null,
-        ativo: this.editAtivo,
-      })
-      .subscribe({
-        next: () => {
-          this.salvandoEdit = false;
-          this.cancelarEdicao();
-          this.carregarTudo();
-        },
-        error: (e) => {
-          this.salvandoEdit = false;
-          this.erro = e?.error?.erro ?? 'Não foi possível salvar.';
-        },
-      });
+
+    const body = {
+      nome: this.formNome.trim(),
+      descricao: this.formDesc.trim() || null,
+      preco: this.formPreco,
+      categoriaId: this.formCatId,
+      codigoImpressao: this.formCod.trim() || null,
+      ativo: this.formAtivo,
+    };
+
+    this.salvando = true;
+    this.erroForm = null;
+
+    const req =
+      this.drawerModo === 'editar' && this.drawerProdutoId != null
+        ? this.api.putAdminProduto(this.drawerProdutoId, body)
+        : this.api.postAdminProduto(body);
+
+    req.subscribe({
+      next: () => {
+        this.salvando = false;
+        this.drawerAberto = false;
+        this.carregarTudo();
+      },
+      error: (e) => {
+        this.salvando = false;
+        this.erroForm = e?.error?.erro ?? 'Não foi possível salvar o produto.';
+      },
+    });
+  }
+
+  tituloDrawer(): string {
+    return this.drawerModo === 'editar'
+      ? `Editar produto #${this.drawerProdutoId}`
+      : 'Novo produto';
   }
 }
