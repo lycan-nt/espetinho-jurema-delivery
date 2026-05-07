@@ -1,5 +1,6 @@
 package br.com.espetinhojurema.application.service;
 
+import br.com.espetinhojurema.application.model.ItemPedidoView;
 import br.com.espetinhojurema.application.model.PedidoDetalheView;
 import br.com.espetinhojurema.domain.model.PedidoStatus;
 import java.math.BigDecimal;
@@ -80,7 +81,11 @@ public class ComandaCozinhaTextoService {
         sb.append(separador()).append('\n');
 
         // ── Cabeçalho de colunas ──────────────────────────────────────────────
-        sb.append("QTD  ITEM\n");
+        if (incluirTotal) {
+            sb.append(centralizar("FECHAMENTO / VALORES")).append('\n');
+        } else {
+            sb.append("QTD  ITEM\n");
+        }
 
         // ── Separador ────────────────────────────────────────────────────────
         sb.append(separador()).append('\n');
@@ -91,7 +96,7 @@ public class ComandaCozinhaTextoService {
             if (item.cancelado()) continue;
             if (itemIdCorte != null && item.id() <= itemIdCorte) continue;
             temItens = true;
-            sb.append(String.format("%3dx %s%n", item.quantidade(), item.produtoNome()));
+            appendCabecalhoItem(sb, item, incluirTotal);
             if (item.pontoCarne() != null) {
                 sb.append("     - Ponto: ").append(item.pontoCarne().rotulo()).append('\n');
             }
@@ -158,6 +163,33 @@ public class ComandaCozinhaTextoService {
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /**
+     * Comanda normal: linha compacta (quantidade alinhada). Fechamento: quantidade visível sem espaços
+     * à esquerda (algumas térmicas cortam padding) + linha com valor unitário e total do item.
+     */
+    private static void appendCabecalhoItem(StringBuilder sb, ItemPedidoView item, boolean incluirTotal) {
+        if (incluirTotal) {
+            BigDecimal unit =
+                    item.precoUnitario().setScale(2, RoundingMode.HALF_UP);
+            BigDecimal subtotal = unit
+                    .multiply(BigDecimal.valueOf(item.quantidade()))
+                    .setScale(2, RoundingMode.HALF_UP);
+            sb.append(item.quantidade())
+                    .append("x ")
+                    .append(item.produtoNome())
+                    .append('\n');
+            sb.append("   un R$ ")
+                    .append(formatValorPt(unit))
+                    .append(" x ")
+                    .append(item.quantidade())
+                    .append(" = R$ ")
+                    .append(formatValorPt(subtotal))
+                    .append('\n');
+        } else {
+            sb.append(String.format("%3dx %s%n", item.quantidade(), item.produtoNome()));
+        }
+    }
 
     private static String formatValorPt(BigDecimal valor) {
         String s = valor.setScale(2, RoundingMode.HALF_UP).toPlainString();
