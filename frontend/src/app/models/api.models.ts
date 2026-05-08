@@ -191,6 +191,27 @@ export interface ImpressaoConfig {
   nomeImpressoraLp: string | null;
 }
 
+/** Campos do cadastro que podem aparecer na comanda de cozinha (cupom ignora e mostra todos os preenchidos). */
+export interface ComandaCabecalhoCampos {
+  cnpj: boolean;
+  nomeEmpresa: boolean;
+  endereco: boolean;
+  telefone: boolean;
+  email: boolean;
+  instagram: boolean;
+}
+
+/** Cadastro da empresa (painel atendimento). */
+export interface EmpresaDados {
+  cnpj: string | null;
+  nomeEmpresa: string | null;
+  endereco: string | null;
+  telefone: string | null;
+  email: string | null;
+  instagram: string | null;
+  comandaCabecalho: ComandaCabecalhoCampos;
+}
+
 export interface ImpressaoFilasResponse {
   filas: string[];
 }

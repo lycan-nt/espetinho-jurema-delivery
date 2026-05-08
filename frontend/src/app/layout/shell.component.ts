@@ -7,7 +7,13 @@ import { ApiBackendService } from '../core/api-backend.service';
 import { AuthService } from '../core/auth.service';
 import { AlertasAtendimentoPanelComponent } from './alertas-atendimento-panel.component';
 
-const CONFIG_ROUTES = ['/config/impressao', '/cadastro/produtos', '/cadastro/usuarios', '/config/acesso-movel'];
+const CONFIG_ROUTES = [
+  '/config/impressao',
+  '/config/empresa',
+  '/cadastro/produtos',
+  '/cadastro/usuarios',
+  '/config/acesso-movel',
+];
 
 @Component({
   selector: 'app-shell',

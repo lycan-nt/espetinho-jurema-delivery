@@ -219,6 +219,29 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
     return !this.pedido || this.produtoId == null || this.carregandoItem;
   }
 
+  /** Quantidade inteira ≥ 1 para o stepper e para validação visual do botão −. */
+  quantidadeParaAdicionar(): number {
+    const q = Math.floor(Number(this.quantidade));
+    return !Number.isFinite(q) || q < 1 ? 1 : q;
+  }
+
+  ajustarQuantidadeAdicionar(delta: number): void {
+    let q = this.quantidadeParaAdicionar() + delta;
+    if (q < 1) {
+      q = 1;
+    }
+    this.quantidade = q;
+  }
+
+  normalizarQuantidadeAdicionar(): void {
+    const q = Math.floor(Number(this.quantidade));
+    if (!Number.isFinite(q) || q < 1) {
+      this.quantidade = 1;
+    } else {
+      this.quantidade = q;
+    }
+  }
+
   private readonly statusPermiteTransferirMesa: PedidoStatus[] = ['RASCUNHO', 'ABERTO', 'EM_PREPARO', 'PRONTO'];
 
   ngOnInit(): void {
@@ -440,9 +463,11 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
       return;
     }
     const ponto = this.produtoSelecionadoEhEspetinho() ? this.pontoCarneSelecao : null;
+    const qtd = this.quantidadeParaAdicionar();
+    this.quantidade = qtd;
     this.carregandoItem = true;
     this.erroItem = null;
-    this.api.adicionarItem(this.pedido.id, this.produtoId, this.quantidade, this.observacao || null, ponto).subscribe({
+    this.api.adicionarItem(this.pedido.id, this.produtoId, qtd, this.observacao || null, ponto).subscribe({
       next: (p) => {
         this.pedido = p;
         this.carregandoItem = false;

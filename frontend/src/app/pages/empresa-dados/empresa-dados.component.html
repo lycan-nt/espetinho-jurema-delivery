@@ -1,0 +1,94 @@
+<h1 class="page-title">Dados da empresa</h1>
+<p class="subtle">
+  Informações cadastrais usadas em relatórios e documentos. Apenas o perfil <strong>Atendimento</strong> pode alterar.
+</p>
+
+@if (carregando) {
+  <p class="subtle">Carregando…</p>
+} @else {
+  @if (erro) {
+    <p class="err">{{ erro }}</p>
+  }
+
+  <div class="panel">
+    <h2>Cadastro</h2>
+    <div class="field">
+      <label for="emp-cnpj">CNPJ</label>
+      <input
+        id="emp-cnpj"
+        name="emp-cnpj"
+        type="text"
+        [(ngModel)]="cnpj"
+        maxlength="20"
+        autocomplete="off"
+        inputmode="numeric"
+        placeholder="00.000.000/0000-00"
+      />
+    </div>
+    <div class="field">
+      <label for="emp-nome">Nome da empresa</label>
+      <input
+        id="emp-nome"
+        name="emp-nome"
+        type="text"
+        [(ngModel)]="nomeEmpresa"
+        maxlength="200"
+        autocomplete="organization"
+      />
+    </div>
+    <div class="field">
+      <label for="emp-end">Endereço</label>
+      <textarea id="emp-end" name="emp-end" rows="3" [(ngModel)]="endereco" maxlength="500"></textarea>
+    </div>
+    <div class="field">
+      <label for="emp-tel">Telefone</label>
+      <input
+        id="emp-tel"
+        name="emp-tel"
+        type="tel"
+        [(ngModel)]="telefone"
+        maxlength="40"
+        autocomplete="tel"
+        inputmode="tel"
+      />
+    </div>
+    <div class="field">
+      <label for="emp-email">E-mail</label>
+      <input id="emp-email" name="emp-email" type="email" [(ngModel)]="email" maxlength="120" autocomplete="email" />
+    </div>
+    <div class="field">
+      <label for="emp-insta">Instagram</label>
+      <input
+        id="emp-insta"
+        name="emp-insta"
+        type="text"
+        [(ngModel)]="instagram"
+        maxlength="120"
+        autocomplete="off"
+        placeholder="@sua_loja ou link do perfil"
+      />
+    </div>
+
+    <h2 class="h2-spaced">Cabeçalho da comanda de cozinha</h2>
+    <p class="hint">
+      Toque em cada caixa para escolher o que entra na impressão da <strong>comanda</strong>. O cupom continua mostrando todos os dados preenchidos acima.
+    </p>
+    <div class="cabecalho-grid" role="group" aria-label="Campos do cabeçalho da comanda">
+      @for (op of opcoesCabecalhoComanda; track op.key) {
+        <button
+          type="button"
+          class="cab-chip"
+          [class.cab-chip-on]="comandaCabecalho[op.key]"
+          (click)="alternarCabecalho(op.key)"
+        >
+          <span class="cab-chip-mark" aria-hidden="true">{{ comandaCabecalho[op.key] ? '✓' : '○' }}</span>
+          <span class="cab-chip-label">{{ op.label }}</span>
+        </button>
+      }
+    </div>
+
+    <button type="button" class="btn btn-primary salvar-btn" [disabled]="salvando" (click)="salvar()">
+      {{ salvando ? 'Salvando…' : 'Salvar' }}
+    </button>
+  </div>
+}

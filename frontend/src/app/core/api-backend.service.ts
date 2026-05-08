@@ -24,6 +24,7 @@ import {
   ReconhecerAlertaResponse,
   UsuarioAdmin,
   ImpressaoConfig,
+  EmpresaDados,
   ImpressaoFilasResponse,
   ImprimirLocalResponse,
 } from '../models/api.models';
@@ -332,6 +333,14 @@ export class ApiBackendService {
 
   getImpressaoFilas(): Observable<ImpressaoFilasResponse> {
     return this.http.get<ImpressaoFilasResponse>(`${this.base}/impressao/filas`);
+  }
+
+  getEmpresaDados(): Observable<EmpresaDados> {
+    return this.http.get<EmpresaDados>(`${this.base}/config/empresa`);
+  }
+
+  patchEmpresaDados(body: EmpresaDados): Observable<EmpresaDados> {
+    return this.http.patch<EmpresaDados>(`${this.base}/config/empresa`, body);
   }
 
   comprovanteUrl(pedidoId: number, fiscal: boolean, fechamento = false): string {

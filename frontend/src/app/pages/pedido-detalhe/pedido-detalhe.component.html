@@ -72,8 +72,37 @@
 
       <div class="row">
         <div class="field w-qty">
-          <label>Qtd</label>
-          <input type="number" min="1" [(ngModel)]="quantidade" name="qtd" />
+          <label for="qtd-adicionar-input">Qtd</label>
+          <div class="qty-stepper" role="group" aria-label="Quantidade a adicionar">
+            <button
+              type="button"
+              class="btn qty-stepper__btn"
+              aria-label="Diminuir quantidade"
+              [disabled]="quantidadeParaAdicionar() <= 1"
+              (click)="ajustarQuantidadeAdicionar(-1)"
+            >
+              −
+            </button>
+            <input
+              id="qtd-adicionar-input"
+              type="number"
+              min="1"
+              step="1"
+              [(ngModel)]="quantidade"
+              (ngModelChange)="normalizarQuantidadeAdicionar()"
+              name="qtd"
+              class="qty-stepper__input"
+              inputmode="numeric"
+            />
+            <button
+              type="button"
+              class="btn qty-stepper__btn"
+              aria-label="Aumentar quantidade"
+              (click)="ajustarQuantidadeAdicionar(1)"
+            >
+              +
+            </button>
+          </div>
         </div>
       </div>
       @if (produtoSelecionadoEhEspetinho()) {
