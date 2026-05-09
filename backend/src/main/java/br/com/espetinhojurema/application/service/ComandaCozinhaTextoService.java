@@ -3,44 +3,51 @@ package br.com.espetinhojurema.application.service;
 import br.com.espetinhojurema.application.model.ItemPedidoView;
 import br.com.espetinhojurema.application.model.PedidoDetalheView;
 import br.com.espetinhojurema.domain.model.PedidoStatus;
+import br.com.espetinhojurema.domain.model.PontoCarne;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 
 /**
- * Gera o texto da comanda de cozinha seguindo o layout de referência:
+ * Gera o texto da comanda de cozinha: cabeçalho com dados da empresa (ver {@link CabecalhoEmpresaTicketService}),
+ * data/hora e Nº do pedido, mesa, itens e rodapé.
  *
  * <pre>
- * ESPETINHO JUREMA    PED:#1
- * ................................
+ * CNPJ: ...
+ * NOME DA EMPRESA
+ * ...
+ * TEL: ... EMAIL: ...
+ * ------------------------------
+ * 29/04/2026 17:46:08     Nº: 123
+ * ------------------------------
  *          MESA - 1
  * ................................
- * QTD  ITEM
- * ................................
- *   1  Espetinho de Carne
- *      - Ponto: bem passada
- *      - Obs.: sem cebola (exemplo livre)
- * ................................
- * N.Pessoas: 2
- * 29/04/2026               21:22
- * ................................
- *  ** NAO E DOCUMENTO FISCAL **
  * </pre>
  */
 @Service
 public class ComandaCozinhaTextoService {
 
     private static final ZoneId ZONA = ZoneId.of("America/Sao_Paulo");
-    private static final DateTimeFormatter FMT_DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(ZONA);
-    private static final DateTimeFormatter FMT_HORA = DateTimeFormatter.ofPattern("HH:mm").withZone(ZONA);
+    private static final DateTimeFormatter FMT_DATA_HORA_SEG =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss").withZone(ZONA);
 
     /** Largura de colunas — igual ao TicketTextoLayout.COLUNAS (32). */
     private static final int W = 32;
 
     /** Avanço para poder rasgar a bobina confortavelmente. */
     private static final String FEED_FINAL = "\n".repeat(8);
+
+    private final CabecalhoEmpresaTicketService cabecalhoEmpresaTicketService;
+
+    public ComandaCozinhaTextoService(CabecalhoEmpresaTicketService cabecalhoEmpresaTicketService) {
+        this.cabecalhoEmpresaTicketService = cabecalhoEmpresaTicketService;
+    }
 
     /** Gera comanda sem total e sem filtro de itens — usado para solicitação de fechamento. */
     public String gerar(PedidoDetalheView p) {
@@ -63,13 +70,7 @@ public class ComandaCozinhaTextoService {
     public String gerar(PedidoDetalheView p, boolean incluirTotal, Long itemIdCorte) {
         StringBuilder sb = new StringBuilder();
 
-        // ── Cabeçalho: empresa à esquerda, pedido à direita ──────────────────
-        String empresa = "ESPETINHO JUREMA";
-        String ped     = "PED:#" + p.id();
-        sb.append(linhaDupla(empresa, ped)).append('\n');
-
-        // ── Separador ────────────────────────────────────────────────────────
-        sb.append(separador()).append('\n');
+        cabecalhoEmpresaTicketService.appendCabecalhoEmpresaEIdentificacao(sb, p, true);
 
         // ── Mesa / tipo centralizado ──────────────────────────────────────────
         String tituloMesa = p.mesaNumero() != null
@@ -91,27 +92,7 @@ public class ComandaCozinhaTextoService {
         sb.append(separador()).append('\n');
 
         // ── Itens ─────────────────────────────────────────────────────────────
-        boolean temItens = false;
-        for (var item : p.itens()) {
-            if (item.cancelado()) continue;
-            if (itemIdCorte != null && item.id() <= itemIdCorte) continue;
-            temItens = true;
-            appendCabecalhoItem(sb, item, incluirTotal);
-            if (item.pontoCarne() != null) {
-                sb.append("     - Ponto: ").append(item.pontoCarne().rotulo()).append('\n');
-            }
-            if (item.observacao() != null && !item.observacao().isBlank()) {
-                // cada linha da observação indentada
-                for (String linha : item.observacao().split("[\r\n]+")) {
-                    if (!linha.isBlank()) {
-                        sb.append("     - ").append(linha.trim()).append('\n');
-                    }
-                }
-            }
-        }
-        if (!temItens) {
-            sb.append("  (sem itens)\n");
-        }
+        appendSecaoItens(sb, p, incluirTotal, itemIdCorte);
 
         // ── Separador ────────────────────────────────────────────────────────
         sb.append(separador()).append('\n');
@@ -145,10 +126,8 @@ public class ComandaCozinhaTextoService {
             sb.append("Obs.mesa: ").append(p.descricaoMesa()).append('\n');
         }
 
-        // ── Data e hora na mesma linha ────────────────────────────────────────
-        String data = FMT_DATA.format(p.criadoEm());
-        String hora = FMT_HORA.format(p.criadoEm());
-        sb.append(linhaDupla(data, hora)).append('\n');
+        // ── Data e hora (rodapé) ────────────────────────────────────────────────
+        sb.append(FMT_DATA_HORA_SEG.format(p.criadoEm())).append('\n');
 
         // ── Separador ────────────────────────────────────────────────────────
         sb.append(separador()).append('\n');
@@ -163,6 +142,158 @@ public class ComandaCozinhaTextoService {
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /**
+     * Itens sem ponto da carne na ordem do pedido; em seguida espetinhos agrupados por {@link PontoCarne}.
+     * Dentro de cada ponto, o mesmo produto com a mesma observação é consolidado em uma única linha (quantidades somadas).
+     * Linhas de pontos entre grupos (e antes do primeiro quando há itens sem ponto).
+     */
+    private static void appendSecaoItens(
+            StringBuilder sb, PedidoDetalheView p, boolean incluirTotal, Long itemIdCorte) {
+        List<ItemPedidoView> visiveis = new ArrayList<>();
+        for (ItemPedidoView item : p.itens()) {
+            if (item.cancelado()) {
+                continue;
+            }
+            if (itemIdCorte != null && item.id() <= itemIdCorte) {
+                continue;
+            }
+            visiveis.add(item);
+        }
+        if (visiveis.isEmpty()) {
+            sb.append("  (sem itens)\n");
+            return;
+        }
+
+        List<ItemPedidoView> semPonto = new ArrayList<>();
+        Map<PontoCarne, List<ItemPedidoView>> comPonto = new LinkedHashMap<>();
+        for (ItemPedidoView item : visiveis) {
+            if (item.pontoCarne() == null) {
+                semPonto.add(item);
+            } else {
+                comPonto.computeIfAbsent(item.pontoCarne(), k -> new ArrayList<>()).add(item);
+            }
+        }
+
+        for (ItemPedidoView item : semPonto) {
+            appendCabecalhoItem(sb, item, incluirTotal);
+            appendObservacoesItem(sb, item);
+        }
+
+        boolean primeiroGrupoPonto = true;
+        for (Map.Entry<PontoCarne, List<ItemPedidoView>> e : comPonto.entrySet()) {
+            boolean linhaPontosAntes = !semPonto.isEmpty() || !primeiroGrupoPonto;
+            if (linhaPontosAntes) {
+                sb.append(separador()).append('\n');
+            }
+            primeiroGrupoPonto = false;
+
+            PontoCarne ponto = e.getKey();
+            sb.append(" - Ponto: ").append(ponto.rotulo()).append(":\n");
+            for (LinhaAgregadaPonto agg : agregarPorProdutoObservacao(e.getValue())) {
+                appendLinhaItemBlocoPontoAgregado(sb, agg, incluirTotal);
+            }
+        }
+    }
+
+    /** Soma quantidades no mesmo bloco de ponto quando produto e observação coincidem (ordem da primeira ocorrência). */
+    private static List<LinhaAgregadaPonto> agregarPorProdutoObservacao(List<ItemPedidoView> itens) {
+        Map<String, LinhaAgregadaPonto> map = new LinkedHashMap<>();
+        for (ItemPedidoView item : itens) {
+            String key = item.produtoId() + "|" + observacaoChave(item.observacao());
+            LinhaAgregadaPonto agg = map.get(key);
+            if (agg == null) {
+                map.put(key, LinhaAgregadaPonto.criar(item));
+            } else {
+                agg.somar(item);
+            }
+        }
+        return new ArrayList<>(map.values());
+    }
+
+    private static String observacaoChave(String obs) {
+        if (obs == null || obs.isBlank()) {
+            return "";
+        }
+        return obs.strip();
+    }
+
+    private static final class LinhaAgregadaPonto {
+        final String produtoNome;
+        final String observacaoExibir;
+        int quantidade;
+        BigDecimal subtotal;
+
+        private LinhaAgregadaPonto(String produtoNome, String observacaoExibir) {
+            this.produtoNome = produtoNome;
+            this.observacaoExibir = observacaoExibir;
+        }
+
+        static LinhaAgregadaPonto criar(ItemPedidoView i) {
+            String obsEx =
+                    i.observacao() == null || i.observacao().isBlank() ? "" : i.observacao().strip();
+            LinhaAgregadaPonto l = new LinhaAgregadaPonto(i.produtoNome(), obsEx);
+            l.quantidade = i.quantidade();
+            l.subtotal = i.precoUnitario().multiply(BigDecimal.valueOf(i.quantidade()));
+            return l;
+        }
+
+        void somar(ItemPedidoView i) {
+            quantidade += i.quantidade();
+            subtotal = subtotal.add(i.precoUnitario().multiply(BigDecimal.valueOf(i.quantidade())));
+        }
+    }
+
+    private static void appendLinhaItemBlocoPontoAgregado(
+            StringBuilder sb, LinhaAgregadaPonto agg, boolean incluirTotal) {
+        if (incluirTotal) {
+            BigDecimal unit = agg.subtotal
+                    .divide(BigDecimal.valueOf(agg.quantidade), 4, RoundingMode.HALF_UP)
+                    .setScale(2, RoundingMode.HALF_UP);
+            BigDecimal subtotalFmt = agg.subtotal.setScale(2, RoundingMode.HALF_UP);
+            sb.append("  ")
+                    .append(agg.quantidade)
+                    .append("x ")
+                    .append(agg.produtoNome)
+                    .append('\n');
+            sb.append("     un R$ ")
+                    .append(formatValorPt(unit))
+                    .append(" x ")
+                    .append(agg.quantidade)
+                    .append(" = R$ ")
+                    .append(formatValorPt(subtotalFmt))
+                    .append('\n');
+        } else {
+            sb.append("  ")
+                    .append(agg.quantidade)
+                    .append("x ")
+                    .append(agg.produtoNome)
+                    .append('\n');
+        }
+        if (!agg.observacaoExibir.isBlank()) {
+            appendObservacoesTexto(sb, agg.observacaoExibir, "    ");
+        }
+    }
+
+    /** Observações por item no layout “QTD ITEM” (indentação original). */
+    private static void appendObservacoesItem(StringBuilder sb, ItemPedidoView item) {
+        appendObservacoesItemIndent(sb, item, "     ");
+    }
+
+    private static void appendObservacoesItemIndent(StringBuilder sb, ItemPedidoView item, String indentLista) {
+        if (item.observacao() == null || item.observacao().isBlank()) {
+            return;
+        }
+        appendObservacoesTexto(sb, item.observacao(), indentLista);
+    }
+
+    private static void appendObservacoesTexto(StringBuilder sb, String observacao, String indentLista) {
+        for (String linha : observacao.split("[\r\n]+")) {
+            if (!linha.isBlank()) {
+                sb.append(indentLista).append("- ").append(linha.trim()).append('\n');
+            }
+        }
+    }
 
     /**
      * Comanda normal: linha compacta (quantidade alinhada). Fechamento: quantidade visível sem espaços
@@ -212,17 +343,5 @@ public class ComandaCozinhaTextoService {
         if (t.length() >= W) return t;
         int pad = (W - t.length()) / 2;
         return " ".repeat(pad) + t;
-    }
-
-    /**
-     * Esquerda alinhada e direita alinhada na mesma linha de {@link #W} colunas.
-     * Se não couber, imprime cada uma numa linha separada.
-     */
-    private static String linhaDupla(String esq, String dir) {
-        int espacos = W - esq.length() - dir.length();
-        if (espacos < 1) {
-            return esq + "\n" + dir;
-        }
-        return esq + " ".repeat(espacos) + dir;
     }
 }

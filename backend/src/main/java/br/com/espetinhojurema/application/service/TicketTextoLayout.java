@@ -42,4 +42,25 @@ public final class TicketTextoLayout {
         int right = pad - left;
         return " ".repeat(left) + t + " ".repeat(right) + '\n';
     }
+
+    /**
+     * Esquerda e direita na mesma linha de {@link #COLUNAS}; se não couber, duas linhas (cada uma truncada se
+     * necessário para caber na largura).
+     */
+    public static String linhaDupla(String esq, String dir) {
+        String e = esq != null ? esq.strip() : "";
+        String d = dir != null ? dir.strip() : "";
+        int espacos = COLUNAS - e.length() - d.length();
+        if (espacos < 1) {
+            return truncarOuLinha(e, COLUNAS) + truncarOuLinha(d, COLUNAS);
+        }
+        return e + " ".repeat(espacos) + d + '\n';
+    }
+
+    private static String truncarOuLinha(String s, int w) {
+        if (s.length() <= w) {
+            return s + '\n';
+        }
+        return s.substring(0, w) + '\n';
+    }
 }

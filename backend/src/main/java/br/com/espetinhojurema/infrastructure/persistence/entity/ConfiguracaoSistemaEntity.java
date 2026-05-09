@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Table(name = "configuracao_sistema")
@@ -27,6 +28,48 @@ public class ConfiguracaoSistemaEntity {
      */
     @Column(name = "versao_catalogo_seed")
     private Integer versaoCatalogoSeed;
+
+    @Column(name = "empresa_cnpj", length = 20)
+    private String empresaCnpj;
+
+    @Column(name = "empresa_nome", length = 200)
+    private String empresaNome;
+
+    @Column(name = "empresa_endereco", length = 500)
+    private String empresaEndereco;
+
+    @Column(name = "empresa_telefone", length = 40)
+    private String empresaTelefone;
+
+    @Column(name = "empresa_email", length = 120)
+    private String empresaEmail;
+
+    @Column(name = "empresa_instagram", length = 120)
+    private String empresaInstagram;
+
+    @Column(name = "comanda_cab_exibir_cnpj", nullable = false)
+    @ColumnDefault("true")
+    private boolean comandaCabecalhoExibirCnpj = true;
+
+    @Column(name = "comanda_cab_exibir_nome", nullable = false)
+    @ColumnDefault("true")
+    private boolean comandaCabecalhoExibirNome = true;
+
+    @Column(name = "comanda_cab_exibir_endereco", nullable = false)
+    @ColumnDefault("true")
+    private boolean comandaCabecalhoExibirEndereco = true;
+
+    @Column(name = "comanda_cab_exibir_telefone", nullable = false)
+    @ColumnDefault("true")
+    private boolean comandaCabecalhoExibirTelefone = true;
+
+    @Column(name = "comanda_cab_exibir_email", nullable = false)
+    @ColumnDefault("true")
+    private boolean comandaCabecalhoExibirEmail = true;
+
+    @Column(name = "comanda_cab_exibir_instagram", nullable = false)
+    @ColumnDefault("true")
+    private boolean comandaCabecalhoExibirInstagram = true;
 
     public Long getId() {
         return id;
@@ -58,5 +101,101 @@ public class ConfiguracaoSistemaEntity {
 
     public void setVersaoCatalogoSeed(Integer versaoCatalogoSeed) {
         this.versaoCatalogoSeed = versaoCatalogoSeed;
+    }
+
+    public String getEmpresaCnpj() {
+        return empresaCnpj;
+    }
+
+    public void setEmpresaCnpj(String empresaCnpj) {
+        this.empresaCnpj = empresaCnpj;
+    }
+
+    public String getEmpresaNome() {
+        return empresaNome;
+    }
+
+    public void setEmpresaNome(String empresaNome) {
+        this.empresaNome = empresaNome;
+    }
+
+    public String getEmpresaEndereco() {
+        return empresaEndereco;
+    }
+
+    public void setEmpresaEndereco(String empresaEndereco) {
+        this.empresaEndereco = empresaEndereco;
+    }
+
+    public String getEmpresaTelefone() {
+        return empresaTelefone;
+    }
+
+    public void setEmpresaTelefone(String empresaTelefone) {
+        this.empresaTelefone = empresaTelefone;
+    }
+
+    public String getEmpresaEmail() {
+        return empresaEmail;
+    }
+
+    public void setEmpresaEmail(String empresaEmail) {
+        this.empresaEmail = empresaEmail;
+    }
+
+    public String getEmpresaInstagram() {
+        return empresaInstagram;
+    }
+
+    public void setEmpresaInstagram(String empresaInstagram) {
+        this.empresaInstagram = empresaInstagram;
+    }
+
+    public boolean isComandaCabecalhoExibirCnpj() {
+        return comandaCabecalhoExibirCnpj;
+    }
+
+    public void setComandaCabecalhoExibirCnpj(boolean comandaCabecalhoExibirCnpj) {
+        this.comandaCabecalhoExibirCnpj = comandaCabecalhoExibirCnpj;
+    }
+
+    public boolean isComandaCabecalhoExibirNome() {
+        return comandaCabecalhoExibirNome;
+    }
+
+    public void setComandaCabecalhoExibirNome(boolean comandaCabecalhoExibirNome) {
+        this.comandaCabecalhoExibirNome = comandaCabecalhoExibirNome;
+    }
+
+    public boolean isComandaCabecalhoExibirEndereco() {
+        return comandaCabecalhoExibirEndereco;
+    }
+
+    public void setComandaCabecalhoExibirEndereco(boolean comandaCabecalhoExibirEndereco) {
+        this.comandaCabecalhoExibirEndereco = comandaCabecalhoExibirEndereco;
+    }
+
+    public boolean isComandaCabecalhoExibirTelefone() {
+        return comandaCabecalhoExibirTelefone;
+    }
+
+    public void setComandaCabecalhoExibirTelefone(boolean comandaCabecalhoExibirTelefone) {
+        this.comandaCabecalhoExibirTelefone = comandaCabecalhoExibirTelefone;
+    }
+
+    public boolean isComandaCabecalhoExibirEmail() {
+        return comandaCabecalhoExibirEmail;
+    }
+
+    public void setComandaCabecalhoExibirEmail(boolean comandaCabecalhoExibirEmail) {
+        this.comandaCabecalhoExibirEmail = comandaCabecalhoExibirEmail;
+    }
+
+    public boolean isComandaCabecalhoExibirInstagram() {
+        return comandaCabecalhoExibirInstagram;
+    }
+
+    public void setComandaCabecalhoExibirInstagram(boolean comandaCabecalhoExibirInstagram) {
+        this.comandaCabecalhoExibirInstagram = comandaCabecalhoExibirInstagram;
     }
 }

@@ -5,26 +5,23 @@ import br.com.espetinhojurema.domain.model.FormaPagamento;
 import br.com.espetinhojurema.domain.model.PedidoStatus;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ComprovanteTextoService {
 
-    private static final ZoneId ZONA = ZoneId.of("America/Sao_Paulo");
-    private static final DateTimeFormatter DATA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
-            .withZone(ZONA);
+    private final CabecalhoEmpresaTicketService cabecalhoEmpresaTicketService;
+
+    public ComprovanteTextoService(CabecalhoEmpresaTicketService cabecalhoEmpresaTicketService) {
+        this.cabecalhoEmpresaTicketService = cabecalhoEmpresaTicketService;
+    }
 
     public String gerar(PedidoDetalheView pedido, boolean destacarFiscal) {
         StringBuilder sb = new StringBuilder();
-        sb.append(TicketTextoLayout.linhaIguais());
-        sb.append(TicketTextoLayout.linhaCentralizada("ESPETINHO JUREMA"));
-        sb.append(TicketTextoLayout.linhaIguais());
+        cabecalhoEmpresaTicketService.appendCabecalhoEmpresaEIdentificacao(sb, pedido);
         sb.append("Pedido #").append(pedido.id()).append('\n');
         sb.append("Tipo: ").append(pedido.tipo()).append('\n');
         sb.append("Status: ").append(pedido.status()).append('\n');
-        sb.append(DATA_HORA.format(pedido.criadoEm())).append('\n');
         if (pedido.mesaNumero() != null) {
             sb.append("Mesa: ").append(pedido.mesaNumero()).append('\n');
         }
@@ -97,15 +94,11 @@ public class ComprovanteTextoService {
     /** Comprovante de fechamento: destaca totais e formas de pagamento. */
     public String gerarFechamento(PedidoDetalheView pedido, boolean destacarFiscal) {
         StringBuilder sb = new StringBuilder();
-        sb.append(TicketTextoLayout.linhaIguais());
-        sb.append(TicketTextoLayout.linhaCentralizada("ESPETINHO JUREMA"));
-        sb.append(TicketTextoLayout.linhaIguais());
-        sb.append(TicketTextoLayout.linhaCentralizada("COMANDA DE FECHAMENTO"));
-        sb.append(TicketTextoLayout.linhaIguais());
+        cabecalhoEmpresaTicketService.appendCabecalhoEmpresaEIdentificacao(sb, pedido);
+        sb.append(TicketTextoLayout.linhaTituloEntreIguais("COMANDA DE FECHAMENTO"));
         sb.append("Pedido #").append(pedido.id()).append('\n');
         sb.append("Tipo: ").append(pedido.tipo()).append('\n');
         sb.append("Status: ").append(pedido.status()).append('\n');
-        sb.append(DATA_HORA.format(pedido.criadoEm())).append('\n');
         if (pedido.mesaNumero() != null) {
             sb.append("Mesa: ").append(pedido.mesaNumero()).append('\n');
         }
