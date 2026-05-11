@@ -1,16 +1,20 @@
 import { DecimalPipe } from '@angular/common';
-import {
-  Component,
-  ElementRef,
-  HostListener,
-  OnDestroy,
-  OnInit,
-  ViewChild,
-  inject,
-} from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, filter, finalize, forkJoin, map, of, Subject, switchMap, takeUntil } from 'rxjs';
+import {
+  catchError,
+  concatMap,
+  filter,
+  finalize,
+  forkJoin,
+  from,
+  last,
+  of,
+  Subject,
+  switchMap,
+  takeUntil,
+} from 'rxjs';
 import { ApiBackendService } from '../../core/api-backend.service';
 import { AuthService } from '../../core/auth.service';
 import { RealtimeService } from '../../core/realtime.service';
@@ -52,6 +56,25 @@ const ROTULO_FORMA: Record<FormaPagamento, string> = {
   OUTRO: 'Outro',
 };
 
+/** Linha montada a partir do cardápio para POST sequencial. */
+interface LinhaAdicionarPedido {
+  produtoId: number;
+  quantidade: number;
+  observacao: string | null;
+  pontoCarne: PontoCarne | null;
+}
+
+/** Produto efetivamente marcado para envio (espetinho só entra após escolher o ponto). */
+interface SelecaoCardapioProduto {
+  quantidade: number;
+  pontoCarne: PontoCarne | null;
+}
+
+/** Espetinho em montagem: quantidade definida, ponto ainda não — não conta como “marcado”. */
+interface EspetinhoDraftCardapio {
+  quantidade: number;
+}
+
 @Component({
   selector: 'app-pedido-detalhe',
   imports: [FormsModule, DecimalPipe],
@@ -59,8 +82,6 @@ const ROTULO_FORMA: Record<FormaPagamento, string> = {
   styleUrl: './pedido-detalhe.component.scss',
 })
 export class PedidoDetalheComponent implements OnInit, OnDestroy {
-  @ViewChild('pontoDropdownRoot') private pontoDropdownRoot?: ElementRef<HTMLElement>;
-
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(ApiBackendService);
@@ -73,13 +94,11 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   produtos: Produto[] = [];
   categorias: CategoriaCardapio[] = [];
   categoriaAtivaId: number | null = null;
-  produtoId: number | null = null;
-  quantidade = 1;
   observacao = '';
-  /** Menu “Ponto da carne”: um botão abre/fecha opções (mobile-first). */
-  pontoCarneMenuAberto = false;
-  /** Obrigatório ao lançar item da categoria Espetinhos. */
-  pontoCarneSelecao: PontoCarne | null = null;
+  /** Itens prontos para enviar (espetinho só aparece aqui depois do ponto). */
+  selecaoCardapioPorProdutoId: Record<number, SelecaoCardapioProduto> = {};
+  /** Espetinho clicado: escolhendo ponto antes de contar como marcado. */
+  espetinhoDraftPorProdutoId: Record<number, EspetinhoDraftCardapio> = {};
   readonly opcoesPontoCarne = OPCOES_PONTO_CARNE;
   readonly rotuloPonto = ROTULO_PONTO;
   carregandoItem = false;
@@ -112,7 +131,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
 
   readonly rotuloForma = ROTULO_FORMA;
 
-  private produtoPorId(id: number | null): Produto | undefined {
+  private produtoPorId(id: number | null | undefined): Produto | undefined {
     return id != null ? this.produtos.find((x) => x.id === id) : undefined;
   }
 
@@ -158,88 +177,214 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
 
   selecionarCategoriaCardapio(catId: number): void {
     this.categoriaAtivaId = catId;
-    const lista = this.produtosNaCategoria(catId);
-    if (!lista.some((p) => Number(p.id) === Number(this.produtoId))) {
-      this.produtoId = null;
-      this.onProdutoIdChange();
-    }
   }
 
-  produtoSelecionadoEhEspetinho(): boolean {
-    const p = this.produtoPorId(this.produtoId);
+  produtoEhEspetinhoPorId(produtoId: number): boolean {
+    const p = this.produtoPorId(produtoId);
     const nome = p?.categoriaNome?.trim();
     return nome != null && nome.toLowerCase() === CATEGORIA_ESPETINHOS.toLowerCase();
   }
 
-  onProdutoIdChange(): void {
-    this.pontoCarneSelecao = null;
-    this.pontoCarneMenuAberto = false;
-    this.erroItem = null;
+  produtoMarcadoNoCardapio(produtoId: number): boolean {
+    return this.selecaoCardapioPorProdutoId[produtoId] != null;
   }
 
-  rotuloPrincipalBotaoPonto(): string {
-    if (this.pontoCarneSelecao !== null) {
-      return `Ponto: ${ROTULO_PONTO[this.pontoCarneSelecao]}`;
-    }
-    return 'Escolher ponto da carne…';
+  /** Linha aberta: marcado na seleção ou espetinho em montagem (ainda sem ponto). */
+  produtoLinhaCardapioAberta(produtoId: number): boolean {
+    return (
+      this.selecaoCardapioPorProdutoId[produtoId] != null || this.espetinhoDraftPorProdutoId[produtoId] != null
+    );
   }
 
-  alternarMenuPontoCarne(): void {
-    this.pontoCarneMenuAberto = !this.pontoCarneMenuAberto;
+  quantidadeEspetinhoDraftAbertos(): number {
+    return Object.keys(this.espetinhoDraftPorProdutoId).length;
   }
 
-  selecionarPontoCarne(op: PontoCarne): void {
-    this.pontoCarneSelecao = op;
-    this.pontoCarneMenuAberto = false;
-    this.erroItem = null;
+  /** Marcado de fato = enviável; espetinho no draft ainda não. */
+  checkVerdeCardapio(produtoId: number): boolean {
+    return this.produtoMarcadoNoCardapio(produtoId);
   }
 
-  /** Fecha o menu ao tocar fora (sem bloquear o restante da página). */
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(ev: MouseEvent): void {
-    const t = ev.target;
-    if (!this.pontoCarneMenuAberto || !(t instanceof Node)) {
+  alternarMarcacaoProduto(pr: Produto): void {
+    const id = Number(pr.id);
+    if (this.produtoEhEspetinhoPorId(id)) {
+      const nextSel = { ...this.selecaoCardapioPorProdutoId };
+      const nextDraft = { ...this.espetinhoDraftPorProdutoId };
+      if (nextSel[id]) {
+        delete nextSel[id];
+        delete nextDraft[id];
+      } else if (nextDraft[id]) {
+        delete nextDraft[id];
+      } else {
+        nextDraft[id] = { quantidade: 1 };
+      }
+      this.selecaoCardapioPorProdutoId = nextSel;
+      this.espetinhoDraftPorProdutoId = nextDraft;
+      this.erroItem = null;
       return;
     }
-    const root = this.pontoDropdownRoot?.nativeElement;
-    if (root && !root.contains(t)) {
-      this.pontoCarneMenuAberto = false;
+    const next = { ...this.selecaoCardapioPorProdutoId };
+    if (next[id]) {
+      delete next[id];
+    } else {
+      next[id] = { quantidade: 1, pontoCarne: null };
     }
+    this.selecaoCardapioPorProdutoId = next;
+    this.erroItem = null;
   }
 
-  itemPodeSerAdicionado(): boolean {
-    if (!this.pedido || this.produtoId == null || this.carregandoItem) {
-      return false;
+  limparSelecaoCardapio(): void {
+    this.selecaoCardapioPorProdutoId = {};
+    this.espetinhoDraftPorProdutoId = {};
+    this.erroItem = null;
+  }
+
+  qtdProdutoCardapio(produtoId: number): number {
+    const d = this.espetinhoDraftPorProdutoId[produtoId];
+    if (d) {
+      const q = Math.floor(Number(d.quantidade));
+      return !Number.isFinite(q) || q < 1 ? 1 : q;
     }
-    return !this.produtoSelecionadoEhEspetinho() || this.pontoCarneSelecao !== null;
-  }
-
-  /** Botão permanece ativo sem ponto (espetinho) para o toque mostrar a mensagem de validação. */
-  botaoAdicionarItemDesabilitado(): boolean {
-    return !this.pedido || this.produtoId == null || this.carregandoItem;
-  }
-
-  /** Quantidade inteira ≥ 1 para o stepper e para validação visual do botão −. */
-  quantidadeParaAdicionar(): number {
-    const q = Math.floor(Number(this.quantidade));
+    const s = this.selecaoCardapioPorProdutoId[produtoId];
+    const q = Math.floor(Number(s?.quantidade));
     return !Number.isFinite(q) || q < 1 ? 1 : q;
   }
 
-  ajustarQuantidadeAdicionar(delta: number): void {
-    let q = this.quantidadeParaAdicionar() + delta;
+  ajustarQtdProdutoCardapio(produtoId: number, delta: number): void {
+    const draft = this.espetinhoDraftPorProdutoId[produtoId];
+    let q = this.qtdProdutoCardapio(produtoId) + delta;
     if (q < 1) {
       q = 1;
     }
-    this.quantidade = q;
+    if (draft) {
+      this.espetinhoDraftPorProdutoId = {
+        ...this.espetinhoDraftPorProdutoId,
+        [produtoId]: { quantidade: q },
+      };
+      return;
+    }
+    const cur = this.selecaoCardapioPorProdutoId[produtoId];
+    if (!cur) {
+      return;
+    }
+    this.selecaoCardapioPorProdutoId = {
+      ...this.selecaoCardapioPorProdutoId,
+      [produtoId]: { ...cur, quantidade: q },
+    };
   }
 
-  normalizarQuantidadeAdicionar(): void {
-    const q = Math.floor(Number(this.quantidade));
+  definirQtdProdutoCardapio(produtoId: number, raw: unknown): void {
+    let q = Math.floor(Number(raw));
     if (!Number.isFinite(q) || q < 1) {
-      this.quantidade = 1;
-    } else {
-      this.quantidade = q;
+      q = 1;
     }
+    const draft = this.espetinhoDraftPorProdutoId[produtoId];
+    if (draft) {
+      this.espetinhoDraftPorProdutoId = {
+        ...this.espetinhoDraftPorProdutoId,
+        [produtoId]: { quantidade: q },
+      };
+      return;
+    }
+    const cur = this.selecaoCardapioPorProdutoId[produtoId];
+    if (!cur) {
+      return;
+    }
+    this.selecaoCardapioPorProdutoId = {
+      ...this.selecaoCardapioPorProdutoId,
+      [produtoId]: { ...cur, quantidade: q },
+    };
+  }
+
+  pontoProdutoCardapio(produtoId: number): PontoCarne | null {
+    return this.selecaoCardapioPorProdutoId[produtoId]?.pontoCarne ?? null;
+  }
+
+  definirPontoProdutoCardapio(produtoId: number, op: PontoCarne): void {
+    const draft = this.espetinhoDraftPorProdutoId[produtoId];
+    const qty = this.qtdProdutoCardapio(produtoId);
+    const nextDraft = { ...this.espetinhoDraftPorProdutoId };
+    const nextSel = { ...this.selecaoCardapioPorProdutoId };
+    if (draft) {
+      delete nextDraft[produtoId];
+      nextSel[produtoId] = { quantidade: qty, pontoCarne: op };
+      this.espetinhoDraftPorProdutoId = nextDraft;
+      this.selecaoCardapioPorProdutoId = nextSel;
+      this.erroItem = null;
+      return;
+    }
+    const cur = nextSel[produtoId];
+    if (!cur) {
+      return;
+    }
+    this.selecaoCardapioPorProdutoId = {
+      ...nextSel,
+      [produtoId]: { ...cur, pontoCarne: op },
+    };
+    this.erroItem = null;
+  }
+
+  rotuloAriaToggleProduto(pr: Produto): string {
+    const id = Number(pr.id);
+    if (this.produtoEhEspetinhoPorId(id)) {
+      if (this.produtoMarcadoNoCardapio(id)) {
+        return `Desmarcar ${pr.nome}`;
+      }
+      if (this.espetinhoDraftPorProdutoId[id]) {
+        return `Cancelar escolha de ${pr.nome}`;
+      }
+      return `Escolher quantidade e ponto de ${pr.nome}`;
+    }
+    return `${this.produtoMarcadoNoCardapio(id) ? 'Desmarcar' : 'Marcar'} ${pr.nome}`;
+  }
+
+  quantidadeProdutosMarcadosNoCardapio(): number {
+    return Object.keys(this.selecaoCardapioPorProdutoId).length;
+  }
+
+  /** Linhas que a API aceita (espetinho só entra com ponto definido). */
+  private montarLinhasDaSelecaoCardapio(): LinhaAdicionarPedido[] {
+    const obs = this.observacao?.trim() ? this.observacao.trim() : null;
+    const linhas: LinhaAdicionarPedido[] = [];
+    for (const [idStr, sel] of Object.entries(this.selecaoCardapioPorProdutoId)) {
+      const produtoId = Number(idStr);
+      if (this.produtoEhEspetinhoPorId(produtoId)) {
+        if (!sel.pontoCarne) {
+          continue;
+        }
+      }
+      const qtd = Math.floor(Number(sel.quantidade));
+      const quantidade = !Number.isFinite(qtd) || qtd < 1 ? 1 : qtd;
+      linhas.push({
+        produtoId,
+        quantidade,
+        observacao: obs,
+        pontoCarne: this.produtoEhEspetinhoPorId(produtoId) ? sel.pontoCarne : null,
+      });
+    }
+    return linhas;
+  }
+
+  quantidadeLinhasProntasParaEnviar(): number {
+    return this.montarLinhasDaSelecaoCardapio().length;
+  }
+
+  botaoAdicionarItemDesabilitado(): boolean {
+    if (!this.pedido || this.carregandoItem) {
+      return true;
+    }
+    return this.quantidadeLinhasProntasParaEnviar() === 0;
+  }
+
+  rotuloBotaoAdicionarItens(): string {
+    if (this.carregandoItem) {
+      return 'Adicionando…';
+    }
+    const n = this.quantidadeLinhasProntasParaEnviar();
+    if (n <= 1) {
+      return 'Adicionar';
+    }
+    return `Adicionar ${n} itens`;
   }
 
   private readonly statusPermiteTransferirMesa: PedidoStatus[] = ['RASCUNHO', 'ABERTO', 'EM_PREPARO', 'PRONTO'];
@@ -263,9 +408,8 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
         next: ([produtos, categorias]) => {
           this.produtos = produtos;
           this.categorias = categorias;
-          this.produtoId = null;
-          this.pontoCarneSelecao = null;
-          this.pontoCarneMenuAberto = false;
+          this.selecaoCardapioPorProdutoId = {};
+          this.espetinhoDraftPorProdutoId = {};
           const cats = this.categoriasParaCardapio();
           this.categoriaAtivaId = cats.length > 0 ? cats[0].id : null;
         },
@@ -286,10 +430,6 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEscapeFecharAcoes(): void {
-    if (this.pontoCarneMenuAberto) {
-      this.pontoCarneMenuAberto = false;
-      return;
-    }
     if (this.modalCancelarItem) {
       this.fecharModalCancelarItem();
       return;
@@ -455,32 +595,48 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   }
 
   adicionarItem(): void {
-    if (!this.pedido || !this.produtoId) {
+    if (!this.pedido || this.carregandoItem) {
       return;
     }
-    if (!this.itemPodeSerAdicionado()) {
-      this.erroItem = 'Por favor, escolha o ponto da carne antes de adicionar.';
+    const linhas = this.montarLinhasDaSelecaoCardapio();
+    if (linhas.length === 0) {
+      if (this.quantidadeEspetinhoDraftAbertos() > 0) {
+        this.erroItem =
+          'Para marcar espetinhos, escolha o ponto da carne em cada um (ou cancele tocando de novo no item).';
+      } else {
+        this.erroItem = 'Marque um ou mais produtos no cardápio.';
+      }
       return;
     }
-    const ponto = this.produtoSelecionadoEhEspetinho() ? this.pontoCarneSelecao : null;
-    const qtd = this.quantidadeParaAdicionar();
-    this.quantidade = qtd;
+    const idsEnviados = linhas.map((L) => L.produtoId);
     this.carregandoItem = true;
     this.erroItem = null;
-    this.api.adicionarItem(this.pedido.id, this.produtoId, qtd, this.observacao || null, ponto).subscribe({
-      next: (p) => {
-        this.pedido = p;
-        this.carregandoItem = false;
-        this.observacao = '';
-        this.quantidade = 1;
-        this.pontoCarneSelecao = null;
-        this.pontoCarneMenuAberto = false;
-      },
-      error: (e) => {
-        this.carregandoItem = false;
-        this.erroItem = e?.error?.erro ?? 'Erro ao adicionar.';
-      },
-    });
+    from(linhas)
+      .pipe(
+        concatMap((L) =>
+          this.api.adicionarItem(this.pedido!.id, L.produtoId, L.quantidade, L.observacao, L.pontoCarne),
+        ),
+        last(),
+        finalize(() => {
+          this.carregandoItem = false;
+        }),
+      )
+      .subscribe({
+        next: (p) => {
+          this.pedido = p;
+          const nextSel = { ...this.selecaoCardapioPorProdutoId };
+          for (const id of idsEnviados) {
+            delete nextSel[id];
+          }
+          this.selecaoCardapioPorProdutoId = nextSel;
+          if (Object.keys(nextSel).length === 0) {
+            this.observacao = '';
+          }
+        },
+        error: (e) => {
+          this.erroItem = e?.error?.erro ?? 'Erro ao adicionar.';
+        },
+      });
   }
 
   mudarStatus(status: PedidoStatus): void {

@@ -22,6 +22,10 @@
   @if (pedido.status !== 'PAGO' && pedido.status !== 'CANCELADO') {
     <div class="add-box add-box--destaque">
       <h3>Adicionar item</h3>
+      <p class="hint-multi-add subtle">
+        Marque vários produtos (pode mudar de categoria). Para <strong>espetinhos</strong>, o item só conta como marcado depois que você escolhe o ponto da carne.
+        Um único <strong>Adicionar</strong> envia os marcados.
+      </p>
       <div class="cardapio-add-block">
         <div class="cardapio-panel">
           @if (categoriasParaCardapio().length === 0) {
@@ -45,112 +49,125 @@
               @if (produtosNaCategoria(categoriaAtivaId).length === 0) {
                 <p class="cardapio-vazio">Nenhum produto nesta categoria.</p>
               } @else {
-                <div class="field cardapio-prod-field">
-                  <label for="prod-cardapio-select">Produto</label>
-                  <select
-                    id="prod-cardapio-select"
-                    name="prodCardapio"
-                    [(ngModel)]="produtoId"
-                    (ngModelChange)="onProdutoIdChange()"
-                  >
-                    <option [ngValue]="null" disabled>Escolha o produto…</option>
-                    @for (pr of produtosNaCategoria(categoriaAtivaId); track pr.id) {
-                      <option [ngValue]="pr.id">
-                        {{ pr.nome }} — {{ pr.preco | number : '1.2-2' }}
-                        @if (pr.saldoEstoque != null) {
-                          · est. {{ pr.saldoEstoque }}
-                        }
-                      </option>
-                    }
-                  </select>
-                </div>
+                <p class="cardapio-lista-hint subtle">Marque os itens desta categoria (a seleção permanece ao trocar de aba).</p>
+                <ul class="cardapio-prod-lista" role="list" aria-label="Produtos da categoria">
+                  @for (pr of produtosNaCategoria(categoriaAtivaId); track pr.id) {
+                    <li
+                      class="cardapio-prod-item"
+                      [class.cardapio-prod-item--on]="produtoLinhaCardapioAberta(pr.id)"
+                    >
+                      <div class="cardapio-prod-item__linha">
+                        <button
+                          type="button"
+                          class="cardapio-prod-toggle"
+                          [attr.aria-pressed]="produtoLinhaCardapioAberta(pr.id)"
+                          [attr.aria-label]="rotuloAriaToggleProduto(pr)"
+                          (click)="alternarMarcacaoProduto(pr)"
+                        >
+                          <span class="cardapio-check" [class.cardapio-check--on]="checkVerdeCardapio(pr.id)"></span>
+                        </button>
+                        <div class="cardapio-prod-item__meta">
+                          <span class="cardapio-prod-item__nome">{{ pr.nome }}</span>
+                          <span class="cardapio-prod-item__preco">{{ pr.preco | number : '1.2-2' }}</span>
+                          @if (pr.saldoEstoque != null) {
+                            <span class="cardapio-prod-item__est">est. {{ pr.saldoEstoque }}</span>
+                          }
+                        </div>
+                      </div>
+                      @if (produtoLinhaCardapioAberta(pr.id)) {
+                        <div class="cardapio-prod-item__ctrl">
+                          <div class="qty-stepper qty-stepper--compact" role="group" [attr.aria-label]="'Quantidade ' + pr.nome">
+                            <button
+                              type="button"
+                              class="btn qty-stepper__btn"
+                              aria-label="Diminuir quantidade"
+                              [disabled]="qtdProdutoCardapio(pr.id) <= 1"
+                              (click)="ajustarQtdProdutoCardapio(pr.id, -1); $event.stopPropagation()"
+                            >
+                              −
+                            </button>
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              class="qty-stepper__input"
+                              inputmode="numeric"
+                              [name]="'qtdCardapio' + pr.id"
+                              [ngModel]="qtdProdutoCardapio(pr.id)"
+                              (ngModelChange)="definirQtdProdutoCardapio(pr.id, $event)"
+                            />
+                            <button
+                              type="button"
+                              class="btn qty-stepper__btn"
+                              aria-label="Aumentar quantidade"
+                              (click)="ajustarQtdProdutoCardapio(pr.id, 1); $event.stopPropagation()"
+                            >
+                              +
+                            </button>
+                          </div>
+                          @if (produtoEhEspetinhoPorId(pr.id)) {
+                            <div class="ponto-chips" role="group" aria-label="Ponto da carne">
+                              @for (op of opcoesPontoCarne; track op.valor) {
+                                <button
+                                  type="button"
+                                  class="btn-ponto-chip"
+                                  [class.btn-ponto-chip--on]="pontoProdutoCardapio(pr.id) === op.valor"
+                                  (click)="definirPontoProdutoCardapio(pr.id, op.valor); $event.stopPropagation()"
+                                >
+                                  {{ op.rotulo }}
+                                </button>
+                              }
+                            </div>
+                          }
+                        </div>
+                      }
+                    </li>
+                  }
+                </ul>
               }
             }
           }
         </div>
       </div>
 
-      <div class="row">
-        <div class="field w-qty">
-          <label for="qtd-adicionar-input">Qtd</label>
-          <div class="qty-stepper" role="group" aria-label="Quantidade a adicionar">
-            <button
-              type="button"
-              class="btn qty-stepper__btn"
-              aria-label="Diminuir quantidade"
-              [disabled]="quantidadeParaAdicionar() <= 1"
-              (click)="ajustarQuantidadeAdicionar(-1)"
-            >
-              −
-            </button>
-            <input
-              id="qtd-adicionar-input"
-              type="number"
-              min="1"
-              step="1"
-              [(ngModel)]="quantidade"
-              (ngModelChange)="normalizarQuantidadeAdicionar()"
-              name="qtd"
-              class="qty-stepper__input"
-              inputmode="numeric"
-            />
-            <button
-              type="button"
-              class="btn qty-stepper__btn"
-              aria-label="Aumentar quantidade"
-              (click)="ajustarQuantidadeAdicionar(1)"
-            >
-              +
-            </button>
-          </div>
-        </div>
-      </div>
-      @if (produtoSelecionadoEhEspetinho()) {
-        <div class="field ponto-carne-dropdown" #pontoDropdownRoot>
-          <button
-            type="button"
-            class="btn btn-ponto-dropdown-toggle full-width-touch"
-            [attr.aria-expanded]="pontoCarneMenuAberto"
-            aria-haspopup="listbox"
-            [attr.aria-controls]="pontoCarneMenuAberto ? 'ponto-carne-lista' : null"
-            (click)="alternarMenuPontoCarne(); $event.stopPropagation()"
-          >
-            <span>{{ rotuloPrincipalBotaoPonto() }}</span>
-            <span class="ponto-chevron" aria-hidden="true">{{ pontoCarneMenuAberto ? '▴' : '▾' }}</span>
-          </button>
-          @if (pontoCarneMenuAberto) {
-            <ul id="ponto-carne-lista" class="ponto-carne-dropdown-lista" role="listbox" aria-label="Ponto da carne">
-              @for (op of opcoesPontoCarne; track op.valor) {
-                <li role="presentation">
-                  <button
-                    type="button"
-                    class="btn-ponto-dropdown-item"
-                    role="option"
-                    [attr.aria-selected]="pontoCarneSelecao === op.valor"
-                    (click)="selecionarPontoCarne(op.valor); $event.stopPropagation()"
-                  >
-                    {{ op.rotulo }}
-                  </button>
-                </li>
-              }
-            </ul>
+      @if (quantidadeProdutosMarcadosNoCardapio() > 0 || quantidadeEspetinhoDraftAbertos() > 0) {
+        <p class="cardapio-resumo-selecao subtle">
+          @if (quantidadeProdutosMarcadosNoCardapio() > 0) {
+            {{ quantidadeProdutosMarcadosNoCardapio() }}
+            {{ quantidadeProdutosMarcadosNoCardapio() === 1 ? 'produto marcado' : 'produtos marcados' }}
           }
-        </div>
+          @if (quantidadeProdutosMarcadosNoCardapio() > 0 && quantidadeEspetinhoDraftAbertos() > 0) {
+            <span aria-hidden="true"> · </span>
+          }
+          @if (quantidadeEspetinhoDraftAbertos() > 0) {
+            {{ quantidadeEspetinhoDraftAbertos() }}
+            {{
+              quantidadeEspetinhoDraftAbertos() === 1
+                ? 'espetinho em montagem — falta o ponto para marcar'
+                : 'espetinhos em montagem — falta o ponto para marcar'
+            }}
+          }
+          <button type="button" class="btn btn-ghost btn-limpar-selecao sm" [disabled]="carregandoItem" (click)="limparSelecaoCardapio()">
+            Limpar seleção
+          </button>
+        </p>
       }
+
       <div class="field">
-        <label>Observação</label>
-        <input [(ngModel)]="observacao" name="obs" />
+        <label for="obs-adicionar-itens">Observação (vale para todos os itens deste envio)</label>
+        <input id="obs-adicionar-itens" [(ngModel)]="observacao" name="obs" />
       </div>
+
       @if (erroItem) {
         <p class="err">{{ erroItem }}</p>
       }
       <button
         type="button"
-        class="btn btn-primary"
+        class="btn btn-primary btn-adicionar-itens-full"
         [disabled]="botaoAdicionarItemDesabilitado()"
         (click)="adicionarItem()"
       >
-        {{ carregandoItem ? 'Adicionando…' : 'Adicionar' }}
+        {{ rotuloBotaoAdicionarItens() }}
       </button>
     </div>
   }
