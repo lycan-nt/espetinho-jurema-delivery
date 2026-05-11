@@ -153,22 +153,37 @@
         </p>
       }
 
-      <div class="field">
-        <label for="obs-adicionar-itens">Observação (vale para todos os itens deste envio)</label>
-        <input id="obs-adicionar-itens" [(ngModel)]="observacao" name="obs" />
-      </div>
+      <div class="add-pedido-mobile-bar" [class.add-pedido-mobile-bar--cta]="deveMostrarBarraCtaInferior()">
+        <div class="field field-obs-adicionar">
+          <label for="obs-adicionar-itens">Observação (vale para todos os itens deste envio)</label>
+          <input id="obs-adicionar-itens" [(ngModel)]="observacao" name="obs" autocomplete="off" />
+        </div>
 
-      @if (erroItem) {
-        <p class="err">{{ erroItem }}</p>
-      }
-      <button
-        type="button"
-        class="btn btn-primary btn-adicionar-itens-full"
-        [disabled]="botaoAdicionarItemDesabilitado()"
-        (click)="adicionarItem()"
-      >
-        {{ rotuloBotaoAdicionarItens() }}
-      </button>
+        @if (erroItem) {
+          <p class="err err-add-bar">{{ erroItem }}</p>
+        }
+
+        @if (temSelecaoPendenteNaoAdicionada()) {
+          <button
+            type="button"
+            class="btn btn-primary btn-adicionar-itens-full"
+            [disabled]="botaoAdicionarItemDesabilitado()"
+            (click)="adicionarItem()"
+          >
+            {{ rotuloBotaoAdicionarItens() }}
+          </button>
+        } @else if (podeEnviarComanda()) {
+          <p class="hint-ec-add-bar subtle">Envia o pedido ao atendimento (PC). Depois aparece o alerta para imprimir a comanda na cozinha.</p>
+          <button
+            type="button"
+            class="btn btn-primary btn-adicionar-itens-full btn-enviar-comanda-na-barra"
+            [disabled]="carregandoEnviarComanda || carregandoItem"
+            (click)="enviarComanda()"
+          >
+            {{ carregandoEnviarComanda ? 'Enviando…' : 'Enviar comanda' }}
+          </button>
+        }
+      </div>
     </div>
   }
 
@@ -277,20 +292,6 @@
           </li>
         }
       </ul>
-    </div>
-  }
-
-  @if (podeEnviarComanda()) {
-    <div class="enviar-comanda-box">
-      <button
-        type="button"
-        class="btn btn-primary enviar-comanda-btn"
-        [disabled]="carregandoEnviarComanda"
-        (click)="enviarComanda()"
-      >
-        {{ carregandoEnviarComanda ? 'Enviando…' : 'Enviar comanda' }}
-      </button>
-      <p class="hint-ec">Envia o pedido ao atendimento (PC). Só então aparece o alerta para imprimir a comanda na cozinha.</p>
     </div>
   }
 

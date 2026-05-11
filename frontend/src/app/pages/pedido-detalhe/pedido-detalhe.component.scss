@@ -1,3 +1,14 @@
+:host {
+  display: block;
+}
+
+/** Folga no fim da página no mobile quando a faixa inferior (obs + botão fixo) aparece. */
+:host.pedido-detalhe--mobile-add-bar {
+  @media (max-width: 640px) {
+    padding-bottom: calc(12.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .pedido-topbar {
   display: flex;
   flex-wrap: wrap;
@@ -682,7 +693,63 @@
   min-height: 2.85rem;
 }
 
+.add-pedido-mobile-bar {
+  margin-top: 0.65rem;
+}
+
+.hint-ec-add-bar {
+  margin: 0 0 0.45rem;
+  font-size: 0.8rem;
+  line-height: 1.38;
+}
+
 @media (max-width: 640px) {
+  .add-pedido-mobile-bar--cta {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 42;
+    margin-top: 0;
+    padding: 0.65rem 1rem;
+    padding-bottom: max(0.65rem, env(safe-area-inset-bottom, 0px));
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.38);
+  }
+
+  .add-pedido-mobile-bar--cta .field-obs-adicionar {
+    margin-bottom: 0.35rem;
+  }
+
+  .add-pedido-mobile-bar--cta .field-obs-adicionar label {
+    font-size: 0.74rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .add-pedido-mobile-bar--cta .field-obs-adicionar input {
+    font-size: 1rem;
+    min-height: 2.6rem;
+    padding: 0.45rem 0.65rem;
+  }
+
+  .add-pedido-mobile-bar .err-add-bar {
+    margin: 0 0 0.45rem;
+    font-size: 0.82rem;
+    line-height: 1.35;
+  }
+
+  .add-pedido-mobile-bar--cta .hint-ec-add-bar {
+    margin-bottom: 0.4rem;
+  }
+
+  .add-pedido-mobile-bar--cta .btn-adicionar-itens-full {
+    max-width: none;
+    min-height: 3rem;
+    font-size: 1.02rem;
+    font-weight: 700;
+  }
+
   .btn-adicionar-itens-full {
     max-width: none;
   }
@@ -893,26 +960,6 @@
   color: var(--muted);
 }
 
-.enviar-comanda-box {
-  margin: 1rem 0 1.25rem;
-  padding: 1rem;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius);
-  background: rgba(230, 57, 0, 0.06);
-}
-
-.enviar-comanda-btn {
-  width: 100%;
-  max-width: 320px;
-}
-
-.hint-ec {
-  margin: 0.65rem 0 0;
-  font-size: 0.82rem;
-  color: var(--muted);
-  max-width: 420px;
-}
-
 .hint-tm {
   margin: 0 0 0.75rem;
   font-size: 0.82rem;
@@ -948,9 +995,6 @@
     justify-content: center;
   }
 
-  .enviar-comanda-btn {
-    max-width: none;
-  }
 }
 
 .modal-cancel-qtd-overlay {

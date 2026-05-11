@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, HostBinding, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -82,6 +82,12 @@ interface EspetinhoDraftCardapio {
   styleUrl: './pedido-detalhe.component.scss',
 })
 export class PedidoDetalheComponent implements OnInit, OnDestroy {
+  /** Espaço inferior no mobile quando a faixa inferior (Adicionar e/ou Enviar comanda) está fixa. */
+  @HostBinding('class.pedido-detalhe--mobile-add-bar')
+  get hostMobileBarAdicionar(): boolean {
+    return this.deveMostrarBarraCtaInferior();
+  }
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(ApiBackendService);
@@ -385,6 +391,22 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
       return 'Adicionar';
     }
     return `Adicionar ${n} itens`;
+  }
+
+  /** Há marcação ou rascunho (ex.: espetinho sem ponto) ainda não enviados ao servidor. */
+  temSelecaoPendenteNaoAdicionada(): boolean {
+    return (
+      this.quantidadeLinhasProntasParaEnviar() > 0 || this.quantidadeEspetinhoDraftAbertos() > 0
+    );
+  }
+
+  /** Um único CTA forte na faixa inferior: pendência → Adicionar; caso contrário, Enviar comanda quando aplicável. */
+  deveMostrarBarraCtaInferior(): boolean {
+    const p = this.pedido;
+    if (!p || p.status === 'PAGO' || p.status === 'CANCELADO') {
+      return false;
+    }
+    return this.temSelecaoPendenteNaoAdicionada() || this.podeEnviarComanda();
   }
 
   private readonly statusPermiteTransferirMesa: PedidoStatus[] = ['RASCUNHO', 'ABERTO', 'EM_PREPARO', 'PRONTO'];
