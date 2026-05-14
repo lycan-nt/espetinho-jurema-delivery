@@ -5,6 +5,7 @@ import { filter } from 'rxjs/operators';
 import { RealtimeService } from '../core/realtime.service';
 import { ApiBackendService } from '../core/api-backend.service';
 import { AuthService } from '../core/auth.service';
+import { APP_VERSION_LABEL } from '../core/app-version';
 import { AlertasAtendimentoPanelComponent } from './alertas-atendimento-panel.component';
 
 const CONFIG_ROUTES = [
@@ -22,6 +23,7 @@ const CONFIG_ROUTES = [
   styleUrl: './shell.component.scss',
 })
 export class ShellComponent implements OnInit, OnDestroy {
+  readonly appVersionLabel = APP_VERSION_LABEL;
   readonly auth = inject(AuthService);
   private readonly realtime = inject(RealtimeService);
   private readonly api = inject(ApiBackendService);

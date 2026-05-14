@@ -190,41 +190,41 @@
   <div class="itens">
     <h3>Itens</h3>
     <ul>
-      @for (it of pedido.itens; track it.id) {
-        <li [class.item-cancelado]="it.cancelado === true">
-          <span class="q">{{ it.quantidade }}×</span>
-          <span class="n">{{ it.produtoNome }}</span>
-          <span class="v">{{ it.precoUnitario * it.quantidade | number : '1.2-2' }}</span>
-          @if (podeCancelarItemPedido(it)) {
+      @for (agg of itensAgrupados; track trackIdItemAgregado(agg)) {
+        <li [class.item-cancelado]="agg.cancelado === true">
+          <span class="q">{{ agg.quantidade }}×</span>
+          <span class="n">{{ agg.produtoNome }}</span>
+          <span class="v">{{ agg.precoUnitario * agg.quantidade | number : '1.2-2' }}</span>
+          @if (podeCancelarItemAgregado(agg)) {
             <button
               type="button"
               class="btn btn-ghost sm btn-cancelar-item"
-              [disabled]="cancelandoItemId !== null"
-              (click)="cancelarItemPedido(it)"
+              [disabled]="cancelandoItemAgregado(agg)"
+              (click)="cancelarItemAgregado(agg)"
             >
               {{
-                cancelandoItemId === it.id
+                cancelandoItemAgregado(agg)
                   ? '…'
-                  : it.quantidade > 1
+                  : agg.quantidade > 1
                     ? 'Cancelar quantidade…'
                     : 'Cancelar item'
               }}
             </button>
           }
-          @if (it.pontoCarne) {
-            <span class="o">Ponto: {{ rotuloPonto[it.pontoCarne] }}</span>
+          @if (agg.pontoCarne) {
+            <span class="o">Ponto: {{ rotuloPonto[agg.pontoCarne] }}</span>
           }
-          @if (it.observacao) {
-            <span class="o">{{ it.observacao }}</span>
+          @if (agg.observacao) {
+            <span class="o">{{ agg.observacao }}</span>
           }
-          @if (it.cancelado === true) {
+          @if (agg.cancelado === true) {
             <span class="o meta-cancelado">
               Cancelado
-              @if (it.canceladoEm) {
-                · {{ formatarDataTransferenciaMesa(it.canceladoEm) }}
+              @if (agg.canceladoEm) {
+                · {{ formatarDataTransferenciaMesa(agg.canceladoEm) }}
               }
-              @if (it.canceladoPorLogin) {
-                · {{ it.canceladoPorLogin }}
+              @if (agg.canceladoPorLogin) {
+                · {{ agg.canceladoPorLogin }}
               }
             </span>
           }

@@ -6,7 +6,17 @@ import { ApiBackendService } from '../core/api-backend.service';
 import { AuthService } from '../core/auth.service';
 import { AlertaAtendimentoWsPayload } from '../models/api.models';
 
-type StatusImpressao = 'imprimindo' | 'impresso' | 'erro';
+type StatusImpressao = 'imprimindo' | 'impresso' | 'aguardando-retry' | 'erro';
+
+const MAX_TENTATIVAS = 3;
+const DELAY_RETRY_S = 5;
+
+interface EstadoAlerta {
+  status: StatusImpressao;
+  tentativas: number;
+  contagem: number | null;
+  intervalo?: ReturnType<typeof setInterval>;
+}
 
 @Component({
   selector: 'app-alertas-atendimento-panel',
@@ -19,8 +29,11 @@ export class AlertasAtendimentoPanelComponent implements OnInit, OnDestroy {
   readonly alertas = inject(AlertasAtendimentoService);
   private readonly api = inject(ApiBackendService);
 
-  /** Status de impressão automática por alertaId */
-  readonly statusMap = signal<Record<string, StatusImpressao>>({});
+  /** Estado de impressão por alertaId (status, tentativas, contagem regressiva). */
+  readonly estadoMap = signal<Record<string, EstadoAlerta>>({});
+
+  /** Timers de contagem regressiva — mantidos fora do signal para não serializar handles. */
+  private readonly timers = new Map<string, ReturnType<typeof setInterval>>();
 
   private sub?: Subscription;
 
@@ -45,12 +58,14 @@ export class AlertasAtendimentoPanelComponent implements OnInit, OnDestroy {
   }
 
   statusDe(alertaId: string): StatusImpressao {
-    return this.statusMap()[alertaId] ?? 'imprimindo';
+    return this.estadoMap()[alertaId]?.status ?? 'imprimindo';
+  }
+
+  contagemDe(alertaId: string): number | null {
+    return this.estadoMap()[alertaId]?.contagem ?? null;
   }
 
   ngOnInit(): void {
-    // Ao chegar novo alerta de comanda, dispara impressão automaticamente.
-    // Solicitação de fechamento fica aguardando confirmação manual do atendente.
     this.sub = this.alertas.novoAlerta$.subscribe((a) => {
       if (!this.ehSolicitaFechamento(a)) {
         this.imprimirAuto(a.alertaId);
@@ -60,6 +75,7 @@ export class AlertasAtendimentoPanelComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
+    this.limparTodosTimers();
   }
 
   /** Confirmação manual — usado apenas para SOLICITACAO_FECHAMENTO_COMANDA. */
@@ -80,42 +96,87 @@ export class AlertasAtendimentoPanelComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Fecha o card de comanda auto-impressa. */
+  /** Fecha o card e cancela timers pendentes. */
   fechar(alertaId: string): void {
+    this.cancelarTimer(alertaId);
     this.alertas.remover(alertaId);
-    this.statusMap.update((m) => {
+    this.estadoMap.update((m) => {
       const next = { ...m };
       delete next[alertaId];
       return next;
     });
   }
 
-  /** Reimprime em caso de falha. */
+  /** Retry manual — reseta tentativas e começa do zero. */
   reimprimir(alertaId: string): void {
+    this.cancelarTimer(alertaId);
+    this.setEstado(alertaId, { status: 'imprimindo', tentativas: 0, contagem: null });
     this.imprimirAuto(alertaId);
   }
 
   ignorar(alertaId: string): void {
+    this.cancelarTimer(alertaId);
     this.alertas.ignorar(alertaId);
   }
 
   private imprimirAuto(alertaId: string): void {
-    this.setStatus(alertaId, 'imprimindo');
+    const tentativaAtual = (this.estadoMap()[alertaId]?.tentativas ?? 0) + 1;
+    this.setEstado(alertaId, { status: 'imprimindo', tentativas: tentativaAtual, contagem: null });
+
     this.api.reconhecerAlertaAtendimento(alertaId).subscribe({
       next: (r) => {
         const texto = r.textoComanda?.trim() ?? '';
         if (texto && !r.impressoServidor) {
           imprimirTextoTerminalBrowser(texto, 'Comanda cozinha');
         }
-        this.setStatus(alertaId, 'impresso');
+        this.setEstado(alertaId, { status: 'impresso', tentativas: tentativaAtual, contagem: null });
       },
       error: () => {
-        this.setStatus(alertaId, 'erro');
+        if (tentativaAtual < MAX_TENTATIVAS) {
+          this.iniciarContagemRegressiva(alertaId, tentativaAtual);
+        } else {
+          this.setEstado(alertaId, { status: 'erro', tentativas: tentativaAtual, contagem: null });
+        }
       },
     });
   }
 
-  private setStatus(alertaId: string, status: StatusImpressao): void {
-    this.statusMap.update((m) => ({ ...m, [alertaId]: status }));
+  private iniciarContagemRegressiva(alertaId: string, tentativasFeitas: number): void {
+    this.cancelarTimer(alertaId);
+    this.setEstado(alertaId, { status: 'aguardando-retry', tentativas: tentativasFeitas, contagem: DELAY_RETRY_S });
+
+    const intervalo = setInterval(() => {
+      const estado = this.estadoMap()[alertaId];
+      if (!estado || estado.status !== 'aguardando-retry') {
+        this.cancelarTimer(alertaId);
+        return;
+      }
+      const novaContagem = (estado.contagem ?? 1) - 1;
+      if (novaContagem <= 0) {
+        this.cancelarTimer(alertaId);
+        this.imprimirAuto(alertaId);
+      } else {
+        this.setEstado(alertaId, { ...estado, contagem: novaContagem });
+      }
+    }, 1000);
+
+    this.timers.set(alertaId, intervalo);
+  }
+
+  private cancelarTimer(alertaId: string): void {
+    const t = this.timers.get(alertaId);
+    if (t != null) {
+      clearInterval(t);
+      this.timers.delete(alertaId);
+    }
+  }
+
+  private limparTodosTimers(): void {
+    this.timers.forEach((t) => clearInterval(t));
+    this.timers.clear();
+  }
+
+  private setEstado(alertaId: string, estado: EstadoAlerta): void {
+    this.estadoMap.update((m) => ({ ...m, [alertaId]: estado }));
   }
 }

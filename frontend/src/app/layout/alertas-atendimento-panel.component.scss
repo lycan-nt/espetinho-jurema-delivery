@@ -156,6 +156,11 @@
     color: var(--ok);
   }
 
+  &.aguardando-retry {
+    background: rgba(255, 180, 50, 0.12);
+    color: #f5a623;
+  }
+
   &.erro {
     background: rgba(255, 107, 107, 0.15);
     color: var(--warn);

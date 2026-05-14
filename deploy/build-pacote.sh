@@ -5,7 +5,7 @@ FRONTEND="$ROOT/frontend"
 BACKEND="$ROOT/backend"
 STATIC="$BACKEND/src/main/resources/static"
 INSTALAR="$ROOT/deploy/instalar"
-JAR_NAME="espetinho-jurema-api-1.0.0-SNAPSHOT.jar"
+JAR_NAME="espetinho-jurema-api-2.0.0-SNAPSHOT.jar"
 DEPLOY_JAR="espetinho-app.jar"
 
 echo "========================================"
@@ -15,9 +15,18 @@ echo
 
 echo "[1/5] Build do frontend (Angular)..."
 cd "$FRONTEND"
-if [ ! -d node_modules ]; then
-  echo "Instalando dependências do frontend (npm install)..."
-  npm install
+AJV_MARKER="node_modules/ajv/dist/vocabularies/applicator/index.js"
+if [ ! -d node_modules ] || [ ! -f "$AJV_MARKER" ]; then
+  if [ -d node_modules ] && [ ! -f "$AJV_MARKER" ]; then
+    echo "node_modules incompleto (ex.: falta ajv). Removendo e reinstalando..."
+    rm -rf node_modules
+  fi
+  echo "Instalando dependências do frontend..."
+  if [ -f package-lock.json ]; then
+    npm ci
+  else
+    npm install
+  fi
 fi
 npm run build -- --configuration=production
 echo "OK."

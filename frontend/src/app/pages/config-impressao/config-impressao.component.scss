@@ -10,3 +10,42 @@
 .fila-lista li {
   margin: 0;
 }
+
+.presets-block {
+  margin: 1rem 0 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: var(--bg-subtle, rgba(255, 255, 255, 0.03));
+}
+
+.presets-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.presets-hint {
+  margin-bottom: 0.85rem;
+}
+
+.preset-marca {
+  margin-bottom: 0.75rem;
+}
+
+.preset-marca:last-child {
+  margin-bottom: 0;
+}
+
+.preset-marca-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 0 0 0.4rem;
+}

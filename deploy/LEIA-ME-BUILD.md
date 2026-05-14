@@ -70,4 +70,4 @@ No cliente Windows é preciso baixar o **WinSW-x64.exe** para instalar como serv
 
 ## Nome do JAR gerado pelo Maven
 
-O build espera **`backend/target/espetinho-jurema-api-1.0.0-SNAPSHOT.jar`**. Se mudar `version` ou `artifactId` no `pom.xml`, atualize também **`deploy/build-pacote.sh`** e **`deploy/build-pacote.bat`** (variável `JAR_NAME`).
+O build espera **`backend/target/espetinho-jurema-api-2.0.0-SNAPSHOT.jar`**. Se mudar `version` ou `artifactId` no `pom.xml`, atualize também **`deploy/build-pacote.sh`** e **`deploy/build-pacote.bat`** (variável `JAR_NAME`).

@@ -42,19 +42,19 @@ export class AuthService {
       return null;
     }
     return {
-      login: sessionStorage.getItem(KEY_LOGIN) ?? '',
-      nome: sessionStorage.getItem(KEY_NOME) ?? '',
-      perfil: (sessionStorage.getItem(KEY_PERFIL) as PerfilUsuario) ?? 'GARCOM',
+      login: localStorage.getItem(KEY_LOGIN) ?? '',
+      nome: localStorage.getItem(KEY_NOME) ?? '',
+      perfil: (localStorage.getItem(KEY_PERFIL) as PerfilUsuario) ?? 'GARCOM',
     };
   });
 
   loginRequest(login: string, senha: string): Observable<LoginResponseDto> {
     return this.http.post<LoginResponseDto>(`${this.base}/auth/login`, { login, senha }).pipe(
       tap((r) => {
-        sessionStorage.setItem(KEY_TOKEN, r.token);
-        sessionStorage.setItem(KEY_PERFIL, r.perfil);
-        sessionStorage.setItem(KEY_NOME, r.nome);
-        sessionStorage.setItem(KEY_LOGIN, r.login);
+        localStorage.setItem(KEY_TOKEN, r.token);
+        localStorage.setItem(KEY_PERFIL, r.perfil);
+        localStorage.setItem(KEY_NOME, r.nome);
+        localStorage.setItem(KEY_LOGIN, r.login);
         this.tokenSig.set(r.token);
       }),
     );
@@ -66,10 +66,10 @@ export class AuthService {
   }
 
   clearSession(): void {
-    sessionStorage.removeItem(KEY_TOKEN);
-    sessionStorage.removeItem(KEY_PERFIL);
-    sessionStorage.removeItem(KEY_NOME);
-    sessionStorage.removeItem(KEY_LOGIN);
+    localStorage.removeItem(KEY_TOKEN);
+    localStorage.removeItem(KEY_PERFIL);
+    localStorage.removeItem(KEY_NOME);
+    localStorage.removeItem(KEY_LOGIN);
     this.tokenSig.set(null);
   }
 
@@ -80,14 +80,40 @@ export class AuthService {
   refreshMe(): Observable<UsuarioMeDto> {
     return this.http.get<UsuarioMeDto>(`${this.base}/auth/me`).pipe(
       tap((u) => {
-        sessionStorage.setItem(KEY_PERFIL, u.perfil);
-        sessionStorage.setItem(KEY_NOME, u.nome);
-        sessionStorage.setItem(KEY_LOGIN, u.login);
+        localStorage.setItem(KEY_PERFIL, u.perfil);
+        localStorage.setItem(KEY_NOME, u.nome);
+        localStorage.setItem(KEY_LOGIN, u.login);
       }),
     );
   }
 
+  /**
+   * Lê o token do localStorage. Se existir mas estiver expirado, limpa o armazenamento
+   * e retorna null — o guard redireciona para login automaticamente.
+   */
   private readStoredToken(): string | null {
-    return sessionStorage.getItem(KEY_TOKEN);
+    const token = localStorage.getItem(KEY_TOKEN);
+    if (!token) return null;
+    if (this.isTokenExpired(token)) {
+      localStorage.removeItem(KEY_TOKEN);
+      localStorage.removeItem(KEY_PERFIL);
+      localStorage.removeItem(KEY_NOME);
+      localStorage.removeItem(KEY_LOGIN);
+      return null;
+    }
+    return token;
+  }
+
+  /**
+   * Decodifica o payload do JWT e verifica se o campo `exp` já passou.
+   * Retorna true se expirado ou se o token for malformado.
+   */
+  private isTokenExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return Date.now() >= (payload.exp as number) * 1000;
+    } catch {
+      return true;
+    }
   }
 }

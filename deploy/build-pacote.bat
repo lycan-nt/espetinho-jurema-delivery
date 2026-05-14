@@ -10,16 +10,23 @@ set ROOT=%~dp0..
 set FRONTEND=%ROOT%\frontend
 set BACKEND=%ROOT%\backend
 set STATIC=%BACKEND%\src\main\resources\static
-set JAR_NAME=espetinho-jurema-api-1.0.0-SNAPSHOT.jar
+set JAR_NAME=espetinho-jurema-api-2.0.0-SNAPSHOT.jar
 set DEPLOY_JAR=espetinho-app.jar
 
 echo [1/4] Build do frontend (Angular)...
 cd /d "%FRONTEND%"
-if not exist "node_modules" (
-  echo Instalando dependencias do frontend (npm install)...
-  call npm install
-  if errorlevel 1 ( echo ERRO no npm install. & exit /b 1 )
+set AJV=%FRONTEND%\node_modules\ajv\dist\vocabularies\applicator\index.js
+if not exist "node_modules" goto install_fe
+if not exist "%AJV%" (
+  echo node_modules incompleto. Removendo e reinstalando...
+  rmdir /s /q node_modules
+  goto install_fe
 )
+goto build_fe
+:install_fe
+if exist package-lock.json ( call npm ci ) else ( call npm install )
+if errorlevel 1 ( echo ERRO no npm install/ci. & exit /b 1 )
+:build_fe
 call npm run build -- --configuration=production
 if errorlevel 1 ( echo ERRO no build do frontend. & exit /b 1 )
 echo OK.

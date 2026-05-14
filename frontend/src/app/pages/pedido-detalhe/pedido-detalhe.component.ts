@@ -56,6 +56,11 @@ const ROTULO_FORMA: Record<FormaPagamento, string> = {
   OUTRO: 'Outro',
 };
 
+/** Linha de itens ativos agrupada (mesmo produto + ponto + obs); {@link _itens} = linhas no pedido para cancelar. */
+interface ItemAgregado extends ItemPedido {
+  _itens: ItemPedido[];
+}
+
 /** Linha montada a partir do cardápio para POST sequencial. */
 interface LinhaAdicionarPedido {
   produtoId: number;
@@ -544,6 +549,63 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
 
   itensAtivosNoPedido(p: PedidoDetalhe): ItemPedido[] {
     return (p.itens ?? []).filter((i) => this.itemPedidoAtivo(i));
+  }
+
+  /**
+   * Agrupa itens ativos por produto + ponto da carne + observação (quantidades somadas).
+   * A ordem das linhas segue a primeira ocorrência de cada grupo no pedido (ex.: carne ao ponto,
+   * frango, outro carne ao ponto → uma linha “carne” com qtd total, depois frango).
+   */
+  get itensAgrupados(): ItemAgregado[] {
+    if (!this.pedido?.itens) return [];
+    const mapa = new Map<string, ItemAgregado>();
+    const cancelados: ItemAgregado[] = [];
+
+    for (const item of this.pedido.itens) {
+      if (item.cancelado) {
+        cancelados.push({ ...item, _itens: [item] });
+        continue;
+      }
+      const pontoKey = item.pontoCarne ?? '';
+      const obsKey = (item.observacao ?? '').trim();
+      const chave = `${item.produtoId}|${pontoKey}|${obsKey}`;
+      let agg = mapa.get(chave);
+      if (!agg) {
+        agg = {
+          ...item,
+          quantidade: 0,
+          precoUnitario: 0,
+          _itens: [],
+        };
+        mapa.set(chave, agg);
+      }
+      agg.quantidade += item.quantidade;
+      agg._itens.push(item);
+    }
+
+    for (const agg of mapa.values()) {
+      const subtotal = agg._itens.reduce((s, i) => s + i.precoUnitario * i.quantidade, 0);
+      agg.precoUnitario = agg.quantidade > 0 ? subtotal / agg.quantidade : 0;
+    }
+
+    return [...mapa.values(), ...cancelados];
+  }
+
+  trackIdItemAgregado(agg: ItemAgregado): string {
+    return agg._itens.map((i) => i.id).join('-');
+  }
+
+  podeCancelarItemAgregado(agg: ItemAgregado): boolean {
+    return agg._itens.some((it) => this.podeCancelarItemPedido(it));
+  }
+
+  cancelarItemAgregado(agg: ItemAgregado): void {
+    const alvo = agg._itens[agg._itens.length - 1];
+    this.cancelarItemPedido(alvo);
+  }
+
+  cancelandoItemAgregado(agg: ItemAgregado): boolean {
+    return agg._itens.some((it) => this.cancelandoItemId === it.id);
   }
 
   podeCancelarItemPedido(it: ItemPedido): boolean {

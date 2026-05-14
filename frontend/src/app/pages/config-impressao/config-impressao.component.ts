@@ -20,6 +20,28 @@ export class ConfigImpressaoComponent implements OnInit {
   /** Nome da fila CUPS (ex.: da lista ou digitado). */
   nomeImpressoraLp = '';
 
+  /**
+   * Nomes de fila mais usados no PDV (Bematech / Elgin). Sempre clicáveis para preencher o campo,
+   * mesmo quando o servidor não lista impressoras do SO ({@link filas} vazio).
+   */
+  readonly presetsBematech = [
+    'Bematech MP-4200 TH',
+    'Bematech MP-4200 HS',
+    'Bematech MP-2800 TH',
+  ] as const;
+
+  readonly presetsElgin = ['Elgin i9', 'Elgin FIT Basic', 'Elgin L42 Pro'] as const;
+
+  /** Opções do datalist: presets + filas detectadas no PC (sem duplicar). */
+  get opcoesDatalist(): string[] {
+    const s = new Set<string>([
+      ...this.presetsBematech,
+      ...this.presetsElgin,
+      ...this.filas,
+    ]);
+    return [...s].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }
+
   ngOnInit(): void {
     this.carregar();
   }

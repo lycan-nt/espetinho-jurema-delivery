@@ -8,10 +8,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import org.springframework.stereotype.Service;
 
 /**
@@ -144,13 +141,14 @@ public class ComandaCozinhaTextoService {
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     /**
-     * Itens sem ponto da carne na ordem do pedido; em seguida espetinhos agrupados por {@link PontoCarne}.
-     * Dentro de cada ponto, o mesmo produto com a mesma observação é consolidado em uma única linha (quantidades somadas).
-     * Linhas de pontos entre grupos (e antes do primeiro quando há itens sem ponto).
+     * Agrupa por (produtoId + ponto da carne + observação), somando quantidades. A ordem das linhas é a
+     * da primeira ocorrência de cada grupo no pedido (ex.: carne ao ponto, frango, novo carne ao ponto
+     * → uma linha com a quantidade total de carne ao ponto antes do frango).
+     * Formato: linha {@code QTD ITEM}, depois {@code - Ponto: ...} quando houver, depois obs.
      */
     private static void appendSecaoItens(
             StringBuilder sb, PedidoDetalheView p, boolean incluirTotal, Long itemIdCorte) {
-        List<ItemPedidoView> visiveis = new ArrayList<>();
+        LinkedHashMap<String, GrupoItem> mapa = new LinkedHashMap<>();
         for (ItemPedidoView item : p.itens()) {
             if (item.cancelado()) {
                 continue;
@@ -158,57 +156,50 @@ public class ComandaCozinhaTextoService {
             if (itemIdCorte != null && item.id() <= itemIdCorte) {
                 continue;
             }
-            visiveis.add(item);
+            String pontoKey = item.pontoCarne() == null ? "" : item.pontoCarne().name();
+            String obsKey = observacaoChave(item.observacao());
+            String chave = item.produtoId() + "|" + pontoKey + "|" + obsKey;
+            GrupoItem g = mapa.get(chave);
+            if (g == null) {
+                mapa.put(chave, GrupoItem.criar(item));
+            } else {
+                g.adicionar(item);
+            }
         }
-        if (visiveis.isEmpty()) {
+
+        if (mapa.isEmpty()) {
             sb.append("  (sem itens)\n");
             return;
         }
 
-        List<ItemPedidoView> semPonto = new ArrayList<>();
-        Map<PontoCarne, List<ItemPedidoView>> comPonto = new LinkedHashMap<>();
-        for (ItemPedidoView item : visiveis) {
-            if (item.pontoCarne() == null) {
-                semPonto.add(item);
-            } else {
-                comPonto.computeIfAbsent(item.pontoCarne(), k -> new ArrayList<>()).add(item);
-            }
-        }
-
-        for (ItemPedidoView item : semPonto) {
-            appendCabecalhoItem(sb, item, incluirTotal);
-            appendObservacoesItem(sb, item);
-        }
-
-        boolean primeiroGrupoPonto = true;
-        for (Map.Entry<PontoCarne, List<ItemPedidoView>> e : comPonto.entrySet()) {
-            boolean linhaPontosAntes = !semPonto.isEmpty() || !primeiroGrupoPonto;
-            if (linhaPontosAntes) {
-                sb.append(separador()).append('\n');
-            }
-            primeiroGrupoPonto = false;
-
-            PontoCarne ponto = e.getKey();
-            sb.append(" - Ponto: ").append(ponto.rotulo()).append(":\n");
-            for (LinhaAgregadaPonto agg : agregarPorProdutoObservacao(e.getValue())) {
-                appendLinhaItemBlocoPontoAgregado(sb, agg, incluirTotal);
-            }
+        for (GrupoItem g : mapa.values()) {
+            appendLinhaGrupo(sb, g, incluirTotal);
         }
     }
 
-    /** Soma quantidades no mesmo bloco de ponto quando produto e observação coincidem (ordem da primeira ocorrência). */
-    private static List<LinhaAgregadaPonto> agregarPorProdutoObservacao(List<ItemPedidoView> itens) {
-        Map<String, LinhaAgregadaPonto> map = new LinkedHashMap<>();
-        for (ItemPedidoView item : itens) {
-            String key = item.produtoId() + "|" + observacaoChave(item.observacao());
-            LinhaAgregadaPonto agg = map.get(key);
-            if (agg == null) {
-                map.put(key, LinhaAgregadaPonto.criar(item));
-            } else {
-                agg.somar(item);
+    private static void appendLinhaGrupo(StringBuilder sb, GrupoItem g, boolean incluirTotal) {
+        if (incluirTotal) {
+            BigDecimal unit = g.subtotal
+                    .divide(BigDecimal.valueOf(g.quantidade), 4, RoundingMode.HALF_UP)
+                    .setScale(2, RoundingMode.HALF_UP);
+            BigDecimal subtotalFmt = g.subtotal.setScale(2, RoundingMode.HALF_UP);
+            sb.append(g.quantidade).append("x ").append(g.produtoNome).append('\n');
+            sb.append("   un R$ ").append(formatValorPt(unit))
+                    .append(" x ").append(g.quantidade)
+                    .append(" = R$ ").append(formatValorPt(subtotalFmt)).append('\n');
+        } else {
+            sb.append(String.format("%3dx %s%n", g.quantidade, g.produtoNome));
+        }
+        if (g.pontoCarne != null) {
+            sb.append("     - Ponto: ").append(g.pontoCarne.rotulo()).append('\n');
+        }
+        if (!g.observacao.isBlank()) {
+            for (String linha : g.observacao.split("[\r\n]+")) {
+                if (!linha.isBlank()) {
+                    sb.append("     - ").append(linha.trim()).append('\n');
+                }
             }
         }
-        return new ArrayList<>(map.values());
     }
 
     private static String observacaoChave(String obs) {
@@ -218,107 +209,30 @@ public class ComandaCozinhaTextoService {
         return obs.strip();
     }
 
-    private static final class LinhaAgregadaPonto {
+    private static final class GrupoItem {
         final String produtoNome;
-        final String observacaoExibir;
+        final PontoCarne pontoCarne;
+        final String observacao;
         int quantidade;
         BigDecimal subtotal;
 
-        private LinhaAgregadaPonto(String produtoNome, String observacaoExibir) {
+        private GrupoItem(String produtoNome, PontoCarne pontoCarne, String observacao) {
             this.produtoNome = produtoNome;
-            this.observacaoExibir = observacaoExibir;
+            this.pontoCarne = pontoCarne;
+            this.observacao = observacao;
         }
 
-        static LinhaAgregadaPonto criar(ItemPedidoView i) {
-            String obsEx =
-                    i.observacao() == null || i.observacao().isBlank() ? "" : i.observacao().strip();
-            LinhaAgregadaPonto l = new LinhaAgregadaPonto(i.produtoNome(), obsEx);
-            l.quantidade = i.quantidade();
-            l.subtotal = i.precoUnitario().multiply(BigDecimal.valueOf(i.quantidade()));
-            return l;
+        static GrupoItem criar(ItemPedidoView i) {
+            String obsEx = observacaoChave(i.observacao());
+            GrupoItem g = new GrupoItem(i.produtoNome(), i.pontoCarne(), obsEx);
+            g.quantidade = i.quantidade();
+            g.subtotal = i.precoUnitario().multiply(BigDecimal.valueOf(i.quantidade()));
+            return g;
         }
 
-        void somar(ItemPedidoView i) {
+        void adicionar(ItemPedidoView i) {
             quantidade += i.quantidade();
             subtotal = subtotal.add(i.precoUnitario().multiply(BigDecimal.valueOf(i.quantidade())));
-        }
-    }
-
-    private static void appendLinhaItemBlocoPontoAgregado(
-            StringBuilder sb, LinhaAgregadaPonto agg, boolean incluirTotal) {
-        if (incluirTotal) {
-            BigDecimal unit = agg.subtotal
-                    .divide(BigDecimal.valueOf(agg.quantidade), 4, RoundingMode.HALF_UP)
-                    .setScale(2, RoundingMode.HALF_UP);
-            BigDecimal subtotalFmt = agg.subtotal.setScale(2, RoundingMode.HALF_UP);
-            sb.append("  ")
-                    .append(agg.quantidade)
-                    .append("x ")
-                    .append(agg.produtoNome)
-                    .append('\n');
-            sb.append("     un R$ ")
-                    .append(formatValorPt(unit))
-                    .append(" x ")
-                    .append(agg.quantidade)
-                    .append(" = R$ ")
-                    .append(formatValorPt(subtotalFmt))
-                    .append('\n');
-        } else {
-            sb.append("  ")
-                    .append(agg.quantidade)
-                    .append("x ")
-                    .append(agg.produtoNome)
-                    .append('\n');
-        }
-        if (!agg.observacaoExibir.isBlank()) {
-            appendObservacoesTexto(sb, agg.observacaoExibir, "    ");
-        }
-    }
-
-    /** Observações por item no layout “QTD ITEM” (indentação original). */
-    private static void appendObservacoesItem(StringBuilder sb, ItemPedidoView item) {
-        appendObservacoesItemIndent(sb, item, "     ");
-    }
-
-    private static void appendObservacoesItemIndent(StringBuilder sb, ItemPedidoView item, String indentLista) {
-        if (item.observacao() == null || item.observacao().isBlank()) {
-            return;
-        }
-        appendObservacoesTexto(sb, item.observacao(), indentLista);
-    }
-
-    private static void appendObservacoesTexto(StringBuilder sb, String observacao, String indentLista) {
-        for (String linha : observacao.split("[\r\n]+")) {
-            if (!linha.isBlank()) {
-                sb.append(indentLista).append("- ").append(linha.trim()).append('\n');
-            }
-        }
-    }
-
-    /**
-     * Comanda normal: linha compacta (quantidade alinhada). Fechamento: quantidade visível sem espaços
-     * à esquerda (algumas térmicas cortam padding) + linha com valor unitário e total do item.
-     */
-    private static void appendCabecalhoItem(StringBuilder sb, ItemPedidoView item, boolean incluirTotal) {
-        if (incluirTotal) {
-            BigDecimal unit =
-                    item.precoUnitario().setScale(2, RoundingMode.HALF_UP);
-            BigDecimal subtotal = unit
-                    .multiply(BigDecimal.valueOf(item.quantidade()))
-                    .setScale(2, RoundingMode.HALF_UP);
-            sb.append(item.quantidade())
-                    .append("x ")
-                    .append(item.produtoNome())
-                    .append('\n');
-            sb.append("   un R$ ")
-                    .append(formatValorPt(unit))
-                    .append(" x ")
-                    .append(item.quantidade())
-                    .append(" = R$ ")
-                    .append(formatValorPt(subtotal))
-                    .append('\n');
-        } else {
-            sb.append(String.format("%3dx %s%n", item.quantidade(), item.produtoNome()));
         }
     }
 

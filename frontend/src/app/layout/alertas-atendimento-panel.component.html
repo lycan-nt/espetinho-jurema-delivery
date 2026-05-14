@@ -13,7 +13,11 @@
 
     <div class="alertas-dock" role="region" aria-label="Alertas de mesa">
       @for (a of alertas.fila(); track a.alertaId) {
-        <div class="alerta-card" [class.alerta-card--fechamento]="ehSolicitaFechamento(a)" [class]="!ehSolicitaFechamento(a) ? 'alerta-card status-' + statusDe(a.alertaId) : 'alerta-card alerta-card--fechamento'">
+        <div
+          class="alerta-card"
+          [class.alerta-card--fechamento]="ehSolicitaFechamento(a)"
+          [class]="!ehSolicitaFechamento(a) ? 'alerta-card status-' + statusDe(a.alertaId) : 'alerta-card alerta-card--fechamento'"
+        >
           <div class="alerta-body">
             <strong>{{ mensagemTituloAlerta(a) }}</strong>
             @if (mensagemAjudaAlerta(a)) {
@@ -44,7 +48,7 @@
               </button>
             </div>
           } @else {
-            <!-- Comanda normal: impressão automática, só mostra status + OK -->
+            <!-- Comanda normal: impressão automática com retry -->
             <div class="status-row">
               @switch (statusDe(a.alertaId)) {
                 @case ('imprimindo') {
@@ -55,8 +59,14 @@
                 @case ('impresso') {
                   <span class="status-badge impresso">✓ Impresso</span>
                 }
+                @case ('aguardando-retry') {
+                  <span class="status-badge aguardando-retry">
+                    <span class="spinner-sm"></span>
+                    Tentando novamente em {{ contagemDe(a.alertaId) }}s…
+                  </span>
+                }
                 @case ('erro') {
-                  <span class="status-badge erro">⚠ Falha na impressão</span>
+                  <span class="status-badge erro">⚠ Falha — 3 tentativas sem sucesso</span>
                 }
               }
               <div class="alerta-actions">

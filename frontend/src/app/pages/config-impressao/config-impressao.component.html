@@ -19,12 +19,37 @@
       <code>wmic printer get name</code>. Em Configurações → Impressoras o nome costuma ser o mesmo da fila.
       <strong>Mac/Linux:</strong> Terminal <code>lpstat -p</code>.
     </p>
-    @if (filas.length === 0) {
-      <p class="hint">
-        Nenhuma impressora listada aqui — confira driver/USB no Windows ou <code>lpstat</code> no Mac. Mesmo assim você pode digitar o
-        nome exato (como em Configurações → Impressoras).
+
+    <div class="presets-block">
+      <h3 class="presets-title">Atalho — marcas comuns</h3>
+      <p class="hint presets-hint">
+        Toque no nome para preencher o campo abaixo. Se a fila no seu Windows ou Mac tiver outro texto, digite o nome
+        exato (como nas Configurações de impressoras ou no <code>lpstat</code>).
       </p>
-    } @else {
+      <div class="preset-marca">
+        <span class="preset-marca-label">Bematech</span>
+        <ul class="fila-lista">
+          @for (p of presetsBematech; track p) {
+            <li>
+              <button type="button" class="btn btn-outline sm" (click)="usarFila(p)">{{ p }}</button>
+            </li>
+          }
+        </ul>
+      </div>
+      <div class="preset-marca">
+        <span class="preset-marca-label">Elgin</span>
+        <ul class="fila-lista">
+          @for (p of presetsElgin; track p) {
+            <li>
+              <button type="button" class="btn btn-outline sm" (click)="usarFila(p)">{{ p }}</button>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+
+    @if (filas.length > 0) {
+      <h3 class="presets-title">Encontradas neste computador</h3>
       <ul class="fila-lista">
         @for (f of filas; track f) {
           <li>
@@ -32,6 +57,11 @@
           </li>
         }
       </ul>
+    } @else {
+      <p class="hint">
+        Nenhuma impressora listada automaticamente neste servidor — confira driver/USB no Windows ou <code>lpstat</code> no Mac.
+        Use os atalhos acima ou digite o nome exato.
+      </p>
     }
     <div class="field">
       <label for="nf">Nome da fila salva no sistema</label>
@@ -45,7 +75,7 @@
         autocomplete="off"
       />
       <datalist id="filas-dl">
-        @for (f of filas; track f) {
+        @for (f of opcoesDatalist; track $index) {
           <option [value]="f"></option>
         }
       </datalist>
