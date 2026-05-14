@@ -23,8 +23,9 @@
     <div class="add-box add-box--destaque">
       <h3>Adicionar item</h3>
       <p class="hint-multi-add subtle">
-        Marque vários produtos (pode mudar de categoria). Para <strong>espetinhos</strong>, o item só conta como marcado depois que você escolhe o ponto da carne.
-        Um único <strong>Adicionar</strong> envia os marcados.
+        Marque vários produtos (pode mudar de categoria). Para <strong>espetinhos</strong>, escolha quantidade e ponto; use
+        <strong>mesma carne, outro ponto</strong> para outra linha do mesmo espetinho antes de enviar. Um único
+        <strong>Adicionar</strong> envia todos os marcados.
       </p>
       <div class="cardapio-add-block">
         <div class="cardapio-panel">
@@ -76,48 +77,77 @@
                       </div>
                       @if (produtoLinhaCardapioAberta(pr.id)) {
                         <div class="cardapio-prod-item__ctrl">
-                          <div class="qty-stepper qty-stepper--compact" role="group" [attr.aria-label]="'Quantidade ' + pr.nome">
-                            <button
-                              type="button"
-                              class="btn qty-stepper__btn"
-                              aria-label="Diminuir quantidade"
-                              [disabled]="qtdProdutoCardapio(pr.id) <= 1"
-                              (click)="ajustarQtdProdutoCardapio(pr.id, -1); $event.stopPropagation()"
-                            >
-                              −
-                            </button>
-                            <input
-                              type="number"
-                              min="1"
-                              step="1"
-                              class="qty-stepper__input"
-                              inputmode="numeric"
-                              [name]="'qtdCardapio' + pr.id"
-                              [ngModel]="qtdProdutoCardapio(pr.id)"
-                              (ngModelChange)="definirQtdProdutoCardapio(pr.id, $event)"
-                            />
-                            <button
-                              type="button"
-                              class="btn qty-stepper__btn"
-                              aria-label="Aumentar quantidade"
-                              (click)="ajustarQtdProdutoCardapio(pr.id, 1); $event.stopPropagation()"
-                            >
-                              +
-                            </button>
-                          </div>
                           @if (produtoEhEspetinhoPorId(pr.id)) {
-                            <div class="ponto-chips" role="group" aria-label="Ponto da carne">
-                              @for (op of opcoesPontoCarne; track op.valor) {
-                                <button
-                                  type="button"
-                                  class="btn-ponto-chip"
-                                  [class.btn-ponto-chip--on]="pontoProdutoCardapio(pr.id) === op.valor"
-                                  (click)="definirPontoProdutoCardapio(pr.id, op.valor); $event.stopPropagation()"
-                                >
-                                  {{ op.rotulo }}
-                                </button>
-                              }
+                            @if (espetinhoLinhasProntas(pr.id).length > 0) {
+                              <ul class="espetinho-prontas" role="list" aria-label="Linhas deste espetinho">
+                                @for (linha of espetinhoLinhasProntas(pr.id); track $index) {
+                                  <li class="espetinho-prontas__linha">
+                                    <span class="espetinho-prontas__rotulo">{{ rotuloLinhaEspetinhoPronta(linha) }}</span>
+                                    <button
+                                      type="button"
+                                      class="btn btn-ghost espetinho-prontas__rm sm"
+                                      [attr.aria-label]="'Remover ' + rotuloLinhaEspetinhoPronta(linha)"
+                                      (click)="removerLinhaEspetinhoPronta(pr.id, $index); $event.stopPropagation()"
+                                    >
+                                      Remover
+                                    </button>
+                                  </li>
+                                }
+                              </ul>
+                            }
+                            @if (espetinhoPodeAbrirOutroPonto(pr.id)) {
+                              <button
+                                type="button"
+                                class="btn btn-outline btn-espetinho-outro-ponto"
+                                (click)="abrirRascunhoOutroPontoEspetinho(pr.id); $event.stopPropagation()"
+                              >
+                                Mesma carne, outro ponto
+                              </button>
+                            }
+                          }
+                          @if (!produtoEhEspetinhoPorId(pr.id) || espetinhoRascunhoAberto(pr.id)) {
+                            <div class="qty-stepper qty-stepper--compact" role="group" [attr.aria-label]="'Quantidade ' + pr.nome">
+                              <button
+                                type="button"
+                                class="btn qty-stepper__btn"
+                                aria-label="Diminuir quantidade"
+                                [disabled]="qtdProdutoCardapio(pr.id) <= 1"
+                                (click)="ajustarQtdProdutoCardapio(pr.id, -1); $event.stopPropagation()"
+                              >
+                                −
+                              </button>
+                              <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                class="qty-stepper__input"
+                                inputmode="numeric"
+                                [name]="'qtdCardapio' + pr.id"
+                                [ngModel]="qtdProdutoCardapio(pr.id)"
+                                (ngModelChange)="definirQtdProdutoCardapio(pr.id, $event)"
+                              />
+                              <button
+                                type="button"
+                                class="btn qty-stepper__btn"
+                                aria-label="Aumentar quantidade"
+                                (click)="ajustarQtdProdutoCardapio(pr.id, 1); $event.stopPropagation()"
+                              >
+                                +
+                              </button>
                             </div>
+                            @if (produtoEhEspetinhoPorId(pr.id)) {
+                              <div class="ponto-chips" role="group" aria-label="Ponto da carne">
+                                @for (op of opcoesPontoCarne; track op.valor) {
+                                  <button
+                                    type="button"
+                                    class="btn-ponto-chip"
+                                    (click)="definirPontoProdutoCardapio(pr.id, op.valor); $event.stopPropagation()"
+                                  >
+                                    {{ op.rotulo }}
+                                  </button>
+                                }
+                              </div>
+                            }
                           }
                         </div>
                       }

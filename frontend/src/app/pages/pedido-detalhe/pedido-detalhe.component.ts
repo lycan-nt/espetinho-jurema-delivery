@@ -69,15 +69,25 @@ interface LinhaAdicionarPedido {
   pontoCarne: PontoCarne | null;
 }
 
-/** Produto efetivamente marcado para envio (espetinho só entra após escolher o ponto). */
+/** Produto efetivamente marcado para envio (não-espetinho; qtd + obs local). */
 interface SelecaoCardapioProduto {
   quantidade: number;
-  pontoCarne: PontoCarne | null;
+  pontoCarne: null;
 }
 
-/** Espetinho em montagem: quantidade definida, ponto ainda não — não conta como “marcado”. */
-interface EspetinhoDraftCardapio {
+/** Uma linha de espetinho já com ponto escolhido (vai virar um POST). */
+interface LinhaEspetinhoPronta {
   quantidade: number;
+  pontoCarne: PontoCarne;
+}
+
+/**
+ * Espetinho: várias linhas (quantidade + ponto) antes de clicar em Adicionar.
+ * {@link rascunho} = linha em edição (falta escolher o ponto).
+ */
+interface EstadoEspetinhoCardapio {
+  prontas: LinhaEspetinhoPronta[];
+  rascunho: { quantidade: number } | null;
 }
 
 @Component({
@@ -106,10 +116,10 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   categorias: CategoriaCardapio[] = [];
   categoriaAtivaId: number | null = null;
   observacao = '';
-  /** Itens prontos para enviar (espetinho só aparece aqui depois do ponto). */
+  /** Produtos comuns marcados (não são da categoria Espetinhos). */
   selecaoCardapioPorProdutoId: Record<number, SelecaoCardapioProduto> = {};
-  /** Espetinho clicado: escolhendo ponto antes de contar como marcado. */
-  espetinhoDraftPorProdutoId: Record<number, EspetinhoDraftCardapio> = {};
+  /** Espetinhos: várias linhas (qtd + ponto) antes de Adicionar. */
+  espetinhoEstadoPorProdutoId: Record<number, EstadoEspetinhoCardapio> = {};
   readonly opcoesPontoCarne = OPCOES_PONTO_CARNE;
   readonly rotuloPonto = ROTULO_PONTO;
   carregandoItem = false;
@@ -197,21 +207,72 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   }
 
   produtoMarcadoNoCardapio(produtoId: number): boolean {
+    if (this.produtoEhEspetinhoPorId(produtoId)) {
+      const e = this.espetinhoEstadoPorProdutoId[produtoId];
+      return e != null && e.prontas.length > 0 && e.rascunho == null;
+    }
     return this.selecaoCardapioPorProdutoId[produtoId] != null;
   }
 
   /** Linha aberta: marcado na seleção ou espetinho em montagem (ainda sem ponto). */
   produtoLinhaCardapioAberta(produtoId: number): boolean {
     return (
-      this.selecaoCardapioPorProdutoId[produtoId] != null || this.espetinhoDraftPorProdutoId[produtoId] != null
+      this.selecaoCardapioPorProdutoId[produtoId] != null || this.espetinhoEstadoPorProdutoId[produtoId] != null
     );
   }
 
   quantidadeEspetinhoDraftAbertos(): number {
-    return Object.keys(this.espetinhoDraftPorProdutoId).length;
+    return Object.values(this.espetinhoEstadoPorProdutoId).filter((e) => e.rascunho != null).length;
   }
 
-  /** Marcado de fato = enviável; espetinho no draft ainda não. */
+  espetinhoLinhasProntas(produtoId: number): LinhaEspetinhoPronta[] {
+    return this.espetinhoEstadoPorProdutoId[produtoId]?.prontas ?? [];
+  }
+
+  espetinhoRascunhoAberto(produtoId: number): boolean {
+    return this.espetinhoEstadoPorProdutoId[produtoId]?.rascunho != null;
+  }
+
+  espetinhoPodeAbrirOutroPonto(produtoId: number): boolean {
+    const e = this.espetinhoEstadoPorProdutoId[produtoId];
+    return e != null && e.rascunho == null && e.prontas.length > 0;
+  }
+
+  rotuloLinhaEspetinhoPronta(l: LinhaEspetinhoPronta): string {
+    return `${l.quantidade}x ${ROTULO_PONTO[l.pontoCarne]}`;
+  }
+
+  abrirRascunhoOutroPontoEspetinho(produtoId: number): void {
+    const cur = this.espetinhoEstadoPorProdutoId[produtoId];
+    if (!cur || cur.rascunho != null) {
+      return;
+    }
+    this.espetinhoEstadoPorProdutoId = {
+      ...this.espetinhoEstadoPorProdutoId,
+      [produtoId]: { ...cur, rascunho: { quantidade: 1 } },
+    };
+    this.erroItem = null;
+  }
+
+  removerLinhaEspetinhoPronta(produtoId: number, index: number): void {
+    const cur = this.espetinhoEstadoPorProdutoId[produtoId];
+    if (!cur || index < 0 || index >= cur.prontas.length) {
+      return;
+    }
+    const prontas = cur.prontas.filter((_, i) => i !== index);
+    const nextEst: EstadoEspetinhoCardapio | undefined =
+      prontas.length === 0 && cur.rascunho == null ? undefined : { ...cur, prontas };
+    const copy = { ...this.espetinhoEstadoPorProdutoId };
+    if (nextEst == null) {
+      delete copy[produtoId];
+    } else {
+      copy[produtoId] = nextEst;
+    }
+    this.espetinhoEstadoPorProdutoId = copy;
+    this.erroItem = null;
+  }
+
+  /** Marcado de fato = enviável; espetinho com rascunho aberto ainda não. */
   checkVerdeCardapio(produtoId: number): boolean {
     return this.produtoMarcadoNoCardapio(produtoId);
   }
@@ -219,18 +280,13 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   alternarMarcacaoProduto(pr: Produto): void {
     const id = Number(pr.id);
     if (this.produtoEhEspetinhoPorId(id)) {
-      const nextSel = { ...this.selecaoCardapioPorProdutoId };
-      const nextDraft = { ...this.espetinhoDraftPorProdutoId };
-      if (nextSel[id]) {
-        delete nextSel[id];
-        delete nextDraft[id];
-      } else if (nextDraft[id]) {
-        delete nextDraft[id];
+      const nextEsp = { ...this.espetinhoEstadoPorProdutoId };
+      if (nextEsp[id]) {
+        delete nextEsp[id];
       } else {
-        nextDraft[id] = { quantidade: 1 };
+        nextEsp[id] = { prontas: [], rascunho: { quantidade: 1 } };
       }
-      this.selecaoCardapioPorProdutoId = nextSel;
-      this.espetinhoDraftPorProdutoId = nextDraft;
+      this.espetinhoEstadoPorProdutoId = nextEsp;
       this.erroItem = null;
       return;
     }
@@ -246,12 +302,12 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
 
   limparSelecaoCardapio(): void {
     this.selecaoCardapioPorProdutoId = {};
-    this.espetinhoDraftPorProdutoId = {};
+    this.espetinhoEstadoPorProdutoId = {};
     this.erroItem = null;
   }
 
   qtdProdutoCardapio(produtoId: number): number {
-    const d = this.espetinhoDraftPorProdutoId[produtoId];
+    const d = this.espetinhoEstadoPorProdutoId[produtoId]?.rascunho;
     if (d) {
       const q = Math.floor(Number(d.quantidade));
       return !Number.isFinite(q) || q < 1 ? 1 : q;
@@ -262,15 +318,16 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   }
 
   ajustarQtdProdutoCardapio(produtoId: number, delta: number): void {
-    const draft = this.espetinhoDraftPorProdutoId[produtoId];
+    const est = this.espetinhoEstadoPorProdutoId[produtoId];
+    const rascunho = est?.rascunho;
     let q = this.qtdProdutoCardapio(produtoId) + delta;
     if (q < 1) {
       q = 1;
     }
-    if (draft) {
-      this.espetinhoDraftPorProdutoId = {
-        ...this.espetinhoDraftPorProdutoId,
-        [produtoId]: { quantidade: q },
+    if (rascunho && est) {
+      this.espetinhoEstadoPorProdutoId = {
+        ...this.espetinhoEstadoPorProdutoId,
+        [produtoId]: { ...est, rascunho: { quantidade: q } },
       };
       return;
     }
@@ -289,11 +346,12 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
     if (!Number.isFinite(q) || q < 1) {
       q = 1;
     }
-    const draft = this.espetinhoDraftPorProdutoId[produtoId];
-    if (draft) {
-      this.espetinhoDraftPorProdutoId = {
-        ...this.espetinhoDraftPorProdutoId,
-        [produtoId]: { quantidade: q },
+    const est = this.espetinhoEstadoPorProdutoId[produtoId];
+    const rascunho = est?.rascunho;
+    if (rascunho && est) {
+      this.espetinhoEstadoPorProdutoId = {
+        ...this.espetinhoEstadoPorProdutoId,
+        [produtoId]: { ...est, rascunho: { quantidade: q } },
       };
       return;
     }
@@ -307,30 +365,19 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
     };
   }
 
-  pontoProdutoCardapio(produtoId: number): PontoCarne | null {
-    return this.selecaoCardapioPorProdutoId[produtoId]?.pontoCarne ?? null;
-  }
-
   definirPontoProdutoCardapio(produtoId: number, op: PontoCarne): void {
-    const draft = this.espetinhoDraftPorProdutoId[produtoId];
-    const qty = this.qtdProdutoCardapio(produtoId);
-    const nextDraft = { ...this.espetinhoDraftPorProdutoId };
-    const nextSel = { ...this.selecaoCardapioPorProdutoId };
-    if (draft) {
-      delete nextDraft[produtoId];
-      nextSel[produtoId] = { quantidade: qty, pontoCarne: op };
-      this.espetinhoDraftPorProdutoId = nextDraft;
-      this.selecaoCardapioPorProdutoId = nextSel;
-      this.erroItem = null;
+    const est = this.espetinhoEstadoPorProdutoId[produtoId];
+    if (!est?.rascunho) {
       return;
     }
-    const cur = nextSel[produtoId];
-    if (!cur) {
-      return;
+    let q = Math.floor(Number(est.rascunho.quantidade));
+    if (!Number.isFinite(q) || q < 1) {
+      q = 1;
     }
-    this.selecaoCardapioPorProdutoId = {
-      ...nextSel,
-      [produtoId]: { ...cur, pontoCarne: op },
+    const prontas = [...est.prontas, { quantidade: q, pontoCarne: op }];
+    this.espetinhoEstadoPorProdutoId = {
+      ...this.espetinhoEstadoPorProdutoId,
+      [produtoId]: { prontas, rascunho: null },
     };
     this.erroItem = null;
   }
@@ -341,7 +388,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
       if (this.produtoMarcadoNoCardapio(id)) {
         return `Desmarcar ${pr.nome}`;
       }
-      if (this.espetinhoDraftPorProdutoId[id]) {
+      if (this.espetinhoEstadoPorProdutoId[id]) {
         return `Cancelar escolha de ${pr.nome}`;
       }
       return `Escolher quantidade e ponto de ${pr.nome}`;
@@ -350,7 +397,14 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   }
 
   quantidadeProdutosMarcadosNoCardapio(): number {
-    return Object.keys(this.selecaoCardapioPorProdutoId).length;
+    let n = Object.keys(this.selecaoCardapioPorProdutoId).length;
+    for (const [idStr, e] of Object.entries(this.espetinhoEstadoPorProdutoId)) {
+      const id = Number(idStr);
+      if (this.produtoEhEspetinhoPorId(id) && e.prontas.length > 0 && e.rascunho == null) {
+        n += 1;
+      }
+    }
+    return n;
   }
 
   /** Linhas que a API aceita (espetinho só entra com ponto definido). */
@@ -360,9 +414,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
     for (const [idStr, sel] of Object.entries(this.selecaoCardapioPorProdutoId)) {
       const produtoId = Number(idStr);
       if (this.produtoEhEspetinhoPorId(produtoId)) {
-        if (!sel.pontoCarne) {
-          continue;
-        }
+        continue;
       }
       const qtd = Math.floor(Number(sel.quantidade));
       const quantidade = !Number.isFinite(qtd) || qtd < 1 ? 1 : qtd;
@@ -370,8 +422,26 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
         produtoId,
         quantidade,
         observacao: obs,
-        pontoCarne: this.produtoEhEspetinhoPorId(produtoId) ? sel.pontoCarne : null,
+        pontoCarne: null,
       });
+    }
+    for (const [idStr, e] of Object.entries(this.espetinhoEstadoPorProdutoId)) {
+      const produtoId = Number(idStr);
+      if (!this.produtoEhEspetinhoPorId(produtoId)) {
+        continue;
+      }
+      for (const L of e.prontas) {
+        let q = Math.floor(Number(L.quantidade));
+        if (!Number.isFinite(q) || q < 1) {
+          q = 1;
+        }
+        linhas.push({
+          produtoId,
+          quantidade: q,
+          observacao: obs,
+          pontoCarne: L.pontoCarne,
+        });
+      }
     }
     return linhas;
   }
@@ -436,7 +506,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
           this.produtos = produtos;
           this.categorias = categorias;
           this.selecaoCardapioPorProdutoId = {};
-          this.espetinhoDraftPorProdutoId = {};
+          this.espetinhoEstadoPorProdutoId = {};
           const cats = this.categoriasParaCardapio();
           this.categoriaAtivaId = cats.length > 0 ? cats[0].id : null;
         },
@@ -692,7 +762,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
       }
       return;
     }
-    const idsEnviados = linhas.map((L) => L.produtoId);
+    const idsAfetados = new Set(linhas.map((L) => L.produtoId));
     this.carregandoItem = true;
     this.erroItem = null;
     from(linhas)
@@ -709,11 +779,14 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
         next: (p) => {
           this.pedido = p;
           const nextSel = { ...this.selecaoCardapioPorProdutoId };
-          for (const id of idsEnviados) {
+          const nextEsp = { ...this.espetinhoEstadoPorProdutoId };
+          for (const id of idsAfetados) {
             delete nextSel[id];
+            delete nextEsp[id];
           }
           this.selecaoCardapioPorProdutoId = nextSel;
-          if (Object.keys(nextSel).length === 0) {
+          this.espetinhoEstadoPorProdutoId = nextEsp;
+          if (Object.keys(nextSel).length === 0 && Object.keys(nextEsp).length === 0) {
             this.observacao = '';
           }
         },
