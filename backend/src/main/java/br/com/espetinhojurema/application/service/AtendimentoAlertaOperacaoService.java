@@ -2,8 +2,12 @@ package br.com.espetinhojurema.application.service;
 
 import br.com.espetinhojurema.application.model.ReconhecerAlertaResult;
 import br.com.espetinhojurema.application.port.out.AlertasAtendimentoPersistencePort;
+import br.com.espetinhojurema.application.port.out.MesasPersistencePort;
+import br.com.espetinhojurema.application.port.out.PedidoEventPublisherPort;
 import br.com.espetinhojurema.application.port.out.PedidosPersistencePort;
 import br.com.espetinhojurema.domain.exception.BusinessException;
+import br.com.espetinhojurema.domain.model.MesaStatus;
+import br.com.espetinhojurema.domain.model.PedidoStatus;
 import br.com.espetinhojurema.domain.model.TipoAlertaAtendimento;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +17,8 @@ public class AtendimentoAlertaOperacaoService {
 
     private final AlertasAtendimentoPersistencePort alertasAtendimentoPersistencePort;
     private final PedidosPersistencePort pedidosPersistencePort;
+    private final MesasPersistencePort mesasPersistencePort;
+    private final PedidoEventPublisherPort pedidoEventPublisherPort;
     private final ComandaCozinhaTextoService comandaCozinhaTextoService;
     private final ImpressaoConfigOperacaoService impressaoConfigOperacaoService;
     private final ImpressaoCupsService impressaoCupsService;
@@ -20,11 +26,15 @@ public class AtendimentoAlertaOperacaoService {
     public AtendimentoAlertaOperacaoService(
             AlertasAtendimentoPersistencePort alertasAtendimentoPersistencePort,
             PedidosPersistencePort pedidosPersistencePort,
+            MesasPersistencePort mesasPersistencePort,
+            PedidoEventPublisherPort pedidoEventPublisherPort,
             ComandaCozinhaTextoService comandaCozinhaTextoService,
             ImpressaoConfigOperacaoService impressaoConfigOperacaoService,
             ImpressaoCupsService impressaoCupsService) {
         this.alertasAtendimentoPersistencePort = alertasAtendimentoPersistencePort;
         this.pedidosPersistencePort = pedidosPersistencePort;
+        this.mesasPersistencePort = mesasPersistencePort;
+        this.pedidoEventPublisherPort = pedidoEventPublisherPort;
         this.comandaCozinhaTextoService = comandaCozinhaTextoService;
         this.impressaoConfigOperacaoService = impressaoConfigOperacaoService;
         this.impressaoCupsService = impressaoCupsService;
@@ -55,6 +65,13 @@ public class AtendimentoAlertaOperacaoService {
             return new ReconhecerAlertaResult(texto, true, impressoServidor);
         }
         alertasAtendimentoPersistencePort.marcarReconhecido(alertaId, loginUsuario);
+        if (ehFechamento
+                && pedido.mesaId() != null
+                && pedido.status() != PedidoStatus.PAGO
+                && pedido.status() != PedidoStatus.CANCELADO) {
+            mesasPersistencePort.atualizarStatus(pedido.mesaId(), MesaStatus.OCUPADA);
+            pedidoEventPublisherPort.notificarMudancaPedido(registro.pedidoId());
+        }
         boolean impressoServidor = tentarImprimirServidor(texto);
         return new ReconhecerAlertaResult(texto, false, impressoServidor);
     }

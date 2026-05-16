@@ -91,7 +91,16 @@ export class MesasComponent implements OnInit, OnDestroy {
   }
 
   carregar(): void {
-    this.api.getMesas().subscribe((m) => (this.mesas = m));
+    this.api.getMesas().subscribe((m) => {
+      this.mesas = m;
+      const sel = this.mesaSelecionada;
+      if (sel) {
+        const atualizada = m.find((x) => x.id === sel.id);
+        if (atualizada) {
+          this.mesaSelecionada = atualizada;
+        }
+      }
+    });
     this.api.getMesasResumo().subscribe((r) => (this.resumo = r));
   }
 
@@ -218,6 +227,7 @@ export class MesasComponent implements OnInit, OnDestroy {
     this.api.solicitarFechamentoComandaMesa(m.id).subscribe({
       next: () => {
         this.solicitacaoFechamentoCarregando = false;
+        this.carregar();
         this.feedbackMesas = 'Solicitação enviada ao balcão.';
         if (this.feedbackMesasTimer != null) {
           clearTimeout(this.feedbackMesasTimer);

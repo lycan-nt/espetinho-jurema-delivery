@@ -24,16 +24,20 @@
       type="button"
       class="card-mesa"
       [class.livre]="!m.ocupada"
-      [class.ocupada]="m.ocupada"
+      [class.ocupada]="m.ocupada && m.status !== 'ENCERRANDO_SERVICO'"
+      [class.aguardando-fechamento]="m.status === 'ENCERRANDO_SERVICO'"
       [class.selected]="mesaSelecionada?.id === m.id"
       (click)="selecionarMesa(m)"
     >
       <span class="num">{{ m.numero }}</span>
-      @if (m.ocupada) {
-        <span class="emoji">🍴</span>
+      @if (m.status === 'ENCERRANDO_SERVICO') {
+        <span class="emoji" aria-hidden="true">▢</span>
+        <span class="st">Aguardando fechamento</span>
+      } @else if (m.ocupada) {
+        <span class="emoji" aria-hidden="true">🍴</span>
         <span class="st">Ocupada</span>
       } @else {
-        <span class="emoji">▢</span>
+        <span class="emoji" aria-hidden="true">▢</span>
         <span class="st">Disponível</span>
       }
     </button>

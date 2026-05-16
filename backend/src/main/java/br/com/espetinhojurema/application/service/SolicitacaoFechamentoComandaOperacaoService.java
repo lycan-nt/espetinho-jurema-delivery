@@ -3,8 +3,11 @@ package br.com.espetinhojurema.application.service;
 import br.com.espetinhojurema.application.model.PedidoDetalheView;
 import br.com.espetinhojurema.application.port.out.AlertasAtendimentoPersistencePort;
 import br.com.espetinhojurema.application.port.out.AtendimentoAlertaPublisherPort;
+import br.com.espetinhojurema.application.port.out.MesasPersistencePort;
+import br.com.espetinhojurema.application.port.out.PedidoEventPublisherPort;
 import br.com.espetinhojurema.application.port.out.PedidosPersistencePort;
 import br.com.espetinhojurema.domain.exception.BusinessException;
+import br.com.espetinhojurema.domain.model.MesaStatus;
 import br.com.espetinhojurema.domain.model.PedidoStatus;
 import br.com.espetinhojurema.domain.model.PedidoTipo;
 import br.com.espetinhojurema.domain.model.TipoAlertaAtendimento;
@@ -19,16 +22,22 @@ import org.springframework.transaction.annotation.Transactional;
 public class SolicitacaoFechamentoComandaOperacaoService {
 
     private final PedidosPersistencePort pedidosPersistencePort;
+    private final MesasPersistencePort mesasPersistencePort;
     private final AlertasAtendimentoPersistencePort alertasAtendimentoPersistencePort;
     private final AtendimentoAlertaPublisherPort atendimentoAlertaPublisherPort;
+    private final PedidoEventPublisherPort pedidoEventPublisherPort;
 
     public SolicitacaoFechamentoComandaOperacaoService(
             PedidosPersistencePort pedidosPersistencePort,
+            MesasPersistencePort mesasPersistencePort,
             AlertasAtendimentoPersistencePort alertasAtendimentoPersistencePort,
-            AtendimentoAlertaPublisherPort atendimentoAlertaPublisherPort) {
+            AtendimentoAlertaPublisherPort atendimentoAlertaPublisherPort,
+            PedidoEventPublisherPort pedidoEventPublisherPort) {
         this.pedidosPersistencePort = pedidosPersistencePort;
+        this.mesasPersistencePort = mesasPersistencePort;
         this.alertasAtendimentoPersistencePort = alertasAtendimentoPersistencePort;
         this.atendimentoAlertaPublisherPort = atendimentoAlertaPublisherPort;
+        this.pedidoEventPublisherPort = pedidoEventPublisherPort;
     }
 
     @Transactional
@@ -54,6 +63,9 @@ public class SolicitacaoFechamentoComandaOperacaoService {
         String alertaId = alertasAtendimentoPersistencePort
                 .encontrarAlertaIdPendente(pedidoId, tipo)
                 .orElseGet(() -> alertasAtendimentoPersistencePort.criarPendente(pedidoId, mesaNumero, tipo, null));
+
+        mesasPersistencePort.atualizarStatus(mesaId, MesaStatus.ENCERRANDO_SERVICO);
+        pedidoEventPublisherPort.notificarMudancaPedido(pedidoId);
 
         atendimentoAlertaPublisherPort.notificarAtendimento(
                 tipo.name(), pedidoId, mesaNumero, alertaId);

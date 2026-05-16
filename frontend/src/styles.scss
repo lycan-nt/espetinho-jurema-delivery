@@ -257,6 +257,23 @@ input[type='time']::-webkit-calendar-picker-indicator:hover {
   color: var(--warn);
 }
 
+.card-mesa.aguardando-fechamento {
+  border-color: rgba(230, 57, 0, 0.5);
+}
+
+.card-mesa.aguardando-fechamento:hover {
+  border-color: rgba(230, 57, 0, 0.65);
+}
+
+.card-mesa.aguardando-fechamento .emoji {
+  color: var(--accent);
+  font-weight: 400;
+}
+
+.card-mesa.aguardando-fechamento .st {
+  color: rgba(255, 201, 168, 0.92);
+}
+
 .card-mesa.selected {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(230, 57, 0, 0.25);

@@ -30,6 +30,9 @@ export class AlertasAtendimentoService {
   /** Enquanto o ciclo de som (~30s) está ativo — para piscar a caixinha da mesa na tela. */
   readonly alarmeAtivo = signal(false);
 
+  /** Emite quando o ciclo de ~30s do alarme sonoro termina (não emite ao cancelar o alarme por novo alerta ou fila vazia). */
+  readonly alarmeCicloCompleto$ = new Subject<void>();
+
   /** Emite cada novo alerta assim que chega — usado pelo panel para auto-imprimir. */
   readonly novoAlerta$ = new Subject<AlertaAtendimentoWsPayload>();
 
@@ -123,7 +126,10 @@ export class AlertasAtendimentoService {
 
       sequenciaChimeTeamsLike();
       this.alarmeIntervalId = setInterval(sequenciaChimeTeamsLike, ALARME_INTERVALO_MS);
-      this.alarmeTimeoutId = setTimeout(() => this.pararAlarme(), ALARME_DURACAO_MS);
+      this.alarmeTimeoutId = setTimeout(() => {
+        this.pararAlarme();
+        this.alarmeCicloCompleto$.next();
+      }, ALARME_DURACAO_MS);
     } catch {
       this.alarmeAtivo.set(false);
       /* áudio bloqueado ou indisponível */

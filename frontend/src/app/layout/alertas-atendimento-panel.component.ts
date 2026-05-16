@@ -71,6 +71,15 @@ export class AlertasAtendimentoPanelComponent implements OnInit, OnDestroy {
         this.imprimirAuto(a.alertaId);
       }
     });
+    this.sub.add(
+      this.alertas.alarmeCicloCompleto$.subscribe(() => {
+        for (const a of [...this.alertas.fila()]) {
+          if (!this.ehSolicitaFechamento(a) && this.statusDe(a.alertaId) === 'impresso') {
+            this.fechar(a.alertaId);
+          }
+        }
+      }),
+    );
   }
 
   ngOnDestroy(): void {
@@ -130,6 +139,7 @@ export class AlertasAtendimentoPanelComponent implements OnInit, OnDestroy {
           imprimirTextoTerminalBrowser(texto, 'Comanda cozinha');
         }
         this.setEstado(alertaId, { status: 'impresso', tentativas: tentativaAtual, contagem: null });
+        this.agendarFecharSeCicloDoAlarmeJaTerminou(alertaId);
       },
       error: () => {
         if (tentativaAtual < MAX_TENTATIVAS) {
@@ -161,6 +171,13 @@ export class AlertasAtendimentoPanelComponent implements OnInit, OnDestroy {
     }, 1000);
 
     this.timers.set(alertaId, intervalo);
+  }
+
+  private agendarFecharSeCicloDoAlarmeJaTerminou(alertaId: string): void {
+    if (this.alertas.alarmeAtivo()) {
+      return;
+    }
+    globalThis.setTimeout(() => this.fechar(alertaId), 900);
   }
 
   private cancelarTimer(alertaId: string): void {
