@@ -5,7 +5,7 @@ FRONTEND="$ROOT/frontend"
 BACKEND="$ROOT/backend"
 STATIC="$BACKEND/src/main/resources/static"
 INSTALAR="$ROOT/deploy/instalar"
-JAR_NAME="espetinho-jurema-api-2.1.1-SNAPSHOT.jar"
+JAR_NAME="espetinho-jurema-api-2.1.2-SNAPSHOT.jar"
 DEPLOY_JAR="espetinho-app.jar"
 
 echo "========================================"
