@@ -9,6 +9,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class EspetinhoJuremaApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(EspetinhoJuremaApplication.class, args);
+        // Antes de qualquer classe AWT — senão isHeadless() pode ficar true e o seletor de pasta não abre.
+        System.setProperty("java.awt.headless", "false");
+        SpringApplication app = new SpringApplication(EspetinhoJuremaApplication.class);
+        app.setHeadless(false);
+        app.run(args);
     }
 }

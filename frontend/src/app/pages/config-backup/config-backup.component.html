@@ -1,0 +1,132 @@
+<h1 class="page-title">Configurações de backup</h1>
+<p class="subtle">
+  Defina onde o servidor salva os arquivos <strong>.zip</strong> do banco H2. O caminho é sempre do
+  <strong>computador em que a API está instalada</strong>. O botão <strong>Escolher pasta</strong> abre o Explorador
+  (ou equivalente) nesse mesmo computador — não no navegador / celular.
+</p>
+
+@if (carregando) {
+  <p class="subtle">Carregando…</p>
+} @else {
+  @if (erro) {
+    <p class="err">{{ erro }}</p>
+  }
+
+  @if (visao; as v) {
+    <div class="panel panel-status">
+      <h2>Situação atual</h2>
+      <p class="status-line"><strong>Status da rotina:</strong> {{ v.statusRotina }}</p>
+      <p class="status-line subtle"><strong>Agendamento:</strong> {{ v.agendamentoResumo }}</p>
+      <p class="status-line subtle">
+        <strong>Fuso do agendamento:</strong> {{ v.fusoHorarioAgendamento }} ·
+        <strong>Retenção:</strong> {{ v.retencaoDias }} dia(s)
+      </p>
+      <p class="status-line subtle">
+        <strong>Caminho efetivo usado nos backups:</strong>
+        <code class="path-code">{{ v.diretorioEfetivo }}</code>
+      </p>
+      <p class="status-line subtle">
+        <strong>Último backup com sucesso:</strong>
+        @if (v.ultimoBackupSucessoEm; as ok) {
+          {{ ok | date: 'short' : v.fusoHorarioAgendamento }}
+        } @else {
+          —
+        }
+      </p>
+      <p class="hint backup-agora-hint">
+        <strong>Backup imediato</strong> usa o caminho efetivo acima e não depende dos horários ou dias marcados.
+      </p>
+      <button
+        type="button"
+        class="btn btn-outline backup-agora-btn"
+        [disabled]="executandoBackupAgora || salvando || carregando"
+        (click)="backupAgora()"
+      >
+        {{ executandoBackupAgora ? 'Gerando backup…' : 'Realizar backup agora' }}
+      </button>
+      @if (v.ultimoErroEm) {
+        <p class="status-line err">
+          <strong>Último erro ({{ v.ultimoErroEm | date: 'short' : v.fusoHorarioAgendamento }}):</strong>
+          {{ v.ultimoErroMensagem }}
+        </p>
+      }
+    </div>
+  }
+
+  <div class="panel">
+    <h2>Horários automáticos</h2>
+    <p class="hint">
+      Escolha até dois horários por dia (0h–23h59, conforme o relógio do fuso
+      <strong>{{ visao?.fusoHorarioAgendamento ?? '—' }}</strong>) e quaisquer dias da semana. O que estiver marcado é o
+      que será salvo e usado pela API. Se nenhum dia estiver marcado, o backup automático não dispara (os horários
+      continuam gravados).
+    </p>
+    <div class="time-grid">
+      <div class="field">
+        <label for="bk-t1">1º backup</label>
+        <input id="bk-t1" name="bk-t1" type="time" [(ngModel)]="horario1" [disabled]="salvando" />
+      </div>
+      <div class="field">
+        <label for="bk-t2">2º backup</label>
+        <input id="bk-t2" name="bk-t2" type="time" [(ngModel)]="horario2" [disabled]="salvando" />
+      </div>
+    </div>
+    <div class="field">
+      <span class="field-label">Dias da semana</span>
+      <div class="dias-grid" role="group" aria-label="Dias com backup automático">
+        @for (op of diasOpcoes; track op.codigo) {
+          <button
+            type="button"
+            class="dia-chip"
+            [class.dia-chip-on]="isDiaMarcado(op.codigo)"
+            [disabled]="salvando"
+            (click)="toggleDia(op.codigo)"
+          >
+            <span class="dia-chip-mark" aria-hidden="true">{{ isDiaMarcado(op.codigo) ? '✓' : '○' }}</span>
+            {{ op.label }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Pasta de destino</h2>
+    <p class="hint">
+      Se o botão não abrir nenhuma janela, a API pode estar em modo sem interface (ex.: serviço Windows): use o campo ao
+      lado ou rode o backend com usuário logado no PC. No <strong>Windows</strong> costuma abrir primeiro um diálogo Java;
+      se falhar, o sistema tenta o PowerShell.
+    </p>
+    <div class="field">
+      <label for="bk-dir">Diretório (caminho absoluto no servidor)</label>
+      <div class="dir-row">
+        <input
+          id="bk-dir"
+          name="bk-dir"
+          type="text"
+          [(ngModel)]="diretorio"
+          autocomplete="off"
+          placeholder="Ex.: C:\Espetinho\backups"
+        />
+        <button
+          type="button"
+          class="btn btn-outline pick-btn"
+          [disabled]="salvando || escolhendoPasta || carregando"
+          (click)="escolherPastaNoServidor()"
+        >
+          {{ escolhendoPasta ? 'Abrindo…' : 'Escolher pasta' }}
+        </button>
+      </div>
+    </div>
+    <div class="field check-row">
+      <label class="check-label">
+        <input type="checkbox" [(ngModel)]="criarDiretorioSeNaoExistir" name="bk-mkdir" />
+        Criar a pasta automaticamente se ainda não existir
+      </label>
+    </div>
+
+    <button type="button" class="btn btn-primary salvar-btn" [disabled]="salvando" (click)="salvar()">
+      {{ salvando ? 'Salvando…' : 'Salvar configuração' }}
+    </button>
+  </div>
+}

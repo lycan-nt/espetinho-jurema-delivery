@@ -37,6 +37,12 @@ export const routes: Routes = [
           import('./pages/config-impressao/config-impressao.component').then((m) => m.ConfigImpressaoComponent),
       },
       {
+        path: 'config/backup',
+        canActivate: [atendimentoGuard],
+        loadComponent: () =>
+          import('./pages/config-backup/config-backup.component').then((m) => m.ConfigBackupComponent),
+      },
+      {
         path: 'config/empresa',
         canActivate: [atendimentoGuard],
         loadComponent: () =>

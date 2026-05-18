@@ -219,3 +219,29 @@ export interface ImpressaoFilasResponse {
 export interface ImprimirLocalResponse {
   impressoServidor: boolean;
 }
+
+export type DiaBackupApi = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
+
+/** Configuração de backup H2 (perfil atendimento). Timestamps ISO da API (Instant). */
+export interface BackupConfig {
+  diretorioGravadoNoBanco: string | null;
+  diretorioEfetivo: string;
+  ultimoBackupSucessoEm: string | null;
+  ultimoErroEm: string | null;
+  ultimoErroMensagem: string | null;
+  agendamentoAtivo: boolean;
+  backupHora1: number;
+  backupMinuto1: number;
+  backupHora2: number;
+  backupMinuto2: number;
+  backupDiasSemana: DiaBackupApi[];
+  agendamentoResumo: string;
+  statusRotina: string;
+  retencaoDias: number;
+  fusoHorarioAgendamento: string;
+}
+
+export interface BackupFolderPickResponse {
+  path: string | null;
+  cancelado: boolean;
+}

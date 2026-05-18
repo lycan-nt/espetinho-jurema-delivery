@@ -27,6 +27,8 @@ import {
   EmpresaDados,
   ImpressaoFilasResponse,
   ImprimirLocalResponse,
+  BackupConfig,
+  BackupFolderPickResponse,
 } from '../models/api.models';
 import { environment } from '../../environments/environment';
 
@@ -341,6 +343,32 @@ export class ApiBackendService {
 
   patchEmpresaDados(body: EmpresaDados): Observable<EmpresaDados> {
     return this.http.patch<EmpresaDados>(`${this.base}/config/empresa`, body);
+  }
+
+  getBackupConfig(): Observable<BackupConfig> {
+    return this.http.get<BackupConfig>(`${this.base}/config/backup`);
+  }
+
+  patchBackupConfig(body: {
+    diretorio: string;
+    criarDiretorioSeNaoExistir: boolean;
+    backupHora1: number;
+    backupMinuto1: number;
+    backupHora2: number;
+    backupMinuto2: number;
+    backupDiasSemana: string[];
+  }): Observable<BackupConfig> {
+    return this.http.patch<BackupConfig>(`${this.base}/config/backup`, body);
+  }
+
+  /** Abre seletor de pasta no servidor (Windows Explorer / zenity / macOS). Só preenche o caminho; salve depois. */
+  postBackupSelecionarPasta(): Observable<BackupFolderPickResponse> {
+    return this.http.post<BackupFolderPickResponse>(`${this.base}/config/backup/selecionar-pasta`, {});
+  }
+
+  /** Gera um backup .zip imediato na pasta efetiva (ignora horário/dias do agendamento). */
+  postBackupExecutarAgora(): Observable<BackupConfig> {
+    return this.http.post<BackupConfig>(`${this.base}/config/backup/executar-agora`, {});
   }
 
   comprovanteUrl(pedidoId: number, fiscal: boolean, fechamento = false): string {

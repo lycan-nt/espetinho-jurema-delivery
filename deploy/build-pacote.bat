@@ -10,7 +10,7 @@ set ROOT=%~dp0..
 set FRONTEND=%ROOT%\frontend
 set BACKEND=%ROOT%\backend
 set STATIC=%BACKEND%\src\main\resources\static
-set JAR_NAME=espetinho-jurema-api-2.1.0-SNAPSHOT.jar
+set JAR_NAME=espetinho-jurema-api-2.1.1-SNAPSHOT.jar
 set DEPLOY_JAR=espetinho-app.jar
 
 echo [1/4] Build do frontend (Angular)...

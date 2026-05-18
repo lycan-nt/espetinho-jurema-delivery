@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import org.hibernate.annotations.ColumnDefault;
 
 @Entity
@@ -70,6 +71,36 @@ public class ConfiguracaoSistemaEntity {
     @Column(name = "comanda_cab_exibir_instagram", nullable = false)
     @ColumnDefault("true")
     private boolean comandaCabecalhoExibirInstagram = true;
+
+    /** Caminho gravado pelo usuário; vazio/null ⇒ usar padrão do sistema (`app.backup.directory`). */
+    @Column(name = "backup_diretorio", length = 2000)
+    private String backupDiretorio;
+
+    @Column(name = "backup_ultimo_sucesso")
+    private Instant backupUltimoSucesso;
+
+    @Column(name = "backup_ultimo_erro_em")
+    private Instant backupUltimoErroEm;
+
+    @Column(name = "backup_ultimo_erro_msg", length = 2000)
+    private String backupUltimoErroMsg;
+
+    /** Horários locais (fuso {@code app.backup.schedule-zone}) dos dois backups automáticos por dia. */
+    @Column(name = "backup_agend_h1")
+    private Integer backupAgendHora1 = 19;
+
+    @Column(name = "backup_agend_m1")
+    private Integer backupAgendMinuto1 = 0;
+
+    @Column(name = "backup_agend_h2")
+    private Integer backupAgendHora2 = 21;
+
+    @Column(name = "backup_agend_m2")
+    private Integer backupAgendMinuto2 = 0;
+
+    /** Dias no formato API: MON,TUE,WED,… (separados por vírgula). Vazio = cliente desmarcou todos (sem backup automático). */
+    @Column(name = "backup_agend_dias", length = 64)
+    private String backupAgendDiasSemana = "MON,TUE,WED,THU,FRI,SAT,SUN";
 
     public Long getId() {
         return id;
@@ -197,5 +228,77 @@ public class ConfiguracaoSistemaEntity {
 
     public void setComandaCabecalhoExibirInstagram(boolean comandaCabecalhoExibirInstagram) {
         this.comandaCabecalhoExibirInstagram = comandaCabecalhoExibirInstagram;
+    }
+
+    public String getBackupDiretorio() {
+        return backupDiretorio;
+    }
+
+    public void setBackupDiretorio(String backupDiretorio) {
+        this.backupDiretorio = backupDiretorio;
+    }
+
+    public Instant getBackupUltimoSucesso() {
+        return backupUltimoSucesso;
+    }
+
+    public void setBackupUltimoSucesso(Instant backupUltimoSucesso) {
+        this.backupUltimoSucesso = backupUltimoSucesso;
+    }
+
+    public Instant getBackupUltimoErroEm() {
+        return backupUltimoErroEm;
+    }
+
+    public void setBackupUltimoErroEm(Instant backupUltimoErroEm) {
+        this.backupUltimoErroEm = backupUltimoErroEm;
+    }
+
+    public String getBackupUltimoErroMsg() {
+        return backupUltimoErroMsg;
+    }
+
+    public void setBackupUltimoErroMsg(String backupUltimoErroMsg) {
+        this.backupUltimoErroMsg = backupUltimoErroMsg;
+    }
+
+    public Integer getBackupAgendHora1() {
+        return backupAgendHora1;
+    }
+
+    public void setBackupAgendHora1(Integer backupAgendHora1) {
+        this.backupAgendHora1 = backupAgendHora1;
+    }
+
+    public Integer getBackupAgendMinuto1() {
+        return backupAgendMinuto1;
+    }
+
+    public void setBackupAgendMinuto1(Integer backupAgendMinuto1) {
+        this.backupAgendMinuto1 = backupAgendMinuto1;
+    }
+
+    public Integer getBackupAgendHora2() {
+        return backupAgendHora2;
+    }
+
+    public void setBackupAgendHora2(Integer backupAgendHora2) {
+        this.backupAgendHora2 = backupAgendHora2;
+    }
+
+    public Integer getBackupAgendMinuto2() {
+        return backupAgendMinuto2;
+    }
+
+    public void setBackupAgendMinuto2(Integer backupAgendMinuto2) {
+        this.backupAgendMinuto2 = backupAgendMinuto2;
+    }
+
+    public String getBackupAgendDiasSemana() {
+        return backupAgendDiasSemana;
+    }
+
+    public void setBackupAgendDiasSemana(String backupAgendDiasSemana) {
+        this.backupAgendDiasSemana = backupAgendDiasSemana;
     }
 }

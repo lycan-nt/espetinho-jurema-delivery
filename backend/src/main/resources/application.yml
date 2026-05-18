@@ -33,9 +33,16 @@ app:
     expiration-minutes: 480
   backup:
     enabled: true
+    # Padrão quando nada estiver gravado em configuracao_sistema.backup_diretorio
     directory: ${H2_BACKUP_DIR:./data/backups}
-    cron: "0 0 3 * * *"
     retention-days: 14
+    # Fuso usado para interpretar horários configurados na tela de backup
+    schedule-zone: America/Sao_Paulo
+    # Verificação minuto a minuto para aplicar horários gravados no banco (tela Config. backup)
+    scheduler-tick-cron: "0 * * * * *"
+    # Diálogo nativo (Windows: Explorer; Linux: zenity). Desative em Docker/serviço sem sessão de desktop.
+    desktop-folder-picker-enabled: ${APP_BACKUP_FOLDER_PICKER_ENABLED:true}
+    desktop-folder-picker-timeout-seconds: 120
   mesas:
     quantidade-inicial: 40
   catalogo:

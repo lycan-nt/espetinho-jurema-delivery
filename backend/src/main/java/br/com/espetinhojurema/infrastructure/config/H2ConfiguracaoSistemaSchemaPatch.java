@@ -27,6 +27,18 @@ public class H2ConfiguracaoSistemaSchemaPatch implements ApplicationRunner {
         "comanda_cab_exibir_instagram"
     };
 
+    private static final String[] COLUNAS_BACKUP = {
+        "backup_diretorio VARCHAR(2000)",
+        "backup_ultimo_sucesso TIMESTAMP",
+        "backup_ultimo_erro_em TIMESTAMP",
+        "backup_ultimo_erro_msg VARCHAR(2000)",
+        "backup_agend_h1 INT DEFAULT 19",
+        "backup_agend_m1 INT DEFAULT 0",
+        "backup_agend_h2 INT DEFAULT 21",
+        "backup_agend_m2 INT DEFAULT 0",
+        "backup_agend_dias VARCHAR(64) DEFAULT 'MON,TUE,WED,THU,FRI,SAT,SUN'"
+    };
+
     private final DataSource dataSource;
     private final String jdbcUrl;
 
@@ -48,6 +60,9 @@ public class H2ConfiguracaoSistemaSchemaPatch implements ApplicationRunner {
                         "ALTER TABLE configuracao_sistema ADD COLUMN IF NOT EXISTS "
                                 + col
                                 + " BOOLEAN DEFAULT TRUE NOT NULL");
+            }
+            for (String def : COLUNAS_BACKUP) {
+                st.execute("ALTER TABLE configuracao_sistema ADD COLUMN IF NOT EXISTS " + def);
             }
         }
     }

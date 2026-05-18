@@ -10,6 +10,7 @@ import { AlertasAtendimentoPanelComponent } from './alertas-atendimento-panel.co
 
 const CONFIG_ROUTES = [
   '/config/impressao',
+  '/config/backup',
   '/config/empresa',
   '/cadastro/produtos',
   '/cadastro/usuarios',
