@@ -13,7 +13,7 @@
 
     <groupId>br.com.espetinhojurema</groupId>
     <artifactId>espetinho-jurema-api</artifactId>
-    <version>2.1.2-SNAPSHOT</version>
+    <version>2.1.3-SNAPSHOT</version>
     <name>Espetinho Jurema API</name>
     <description>API REST para operação de mesas, delivery e balcão — Espetinho Jurema</description>
 
