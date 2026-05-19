@@ -1,4 +1,6 @@
 .DS_Store
+
+# IntelliJ
 .idea/
 *.iml
 
@@ -10,6 +12,23 @@ backend/data/
 frontend/node_modules/
 frontend/dist/
 frontend/.angular/
+
+# Backup
+backup/
+*.zip
+*.bak
+
+# Logs
+logs/
+*.log
+
+# Banco H2
+*.mv.db
+*.trace.db
+
+# Temp
+temp/
+tmp/
 
 # Pacote de instalacao — JAR gerado pelo deploy/build-pacote.*
 deploy/instalar/app/*.jar
