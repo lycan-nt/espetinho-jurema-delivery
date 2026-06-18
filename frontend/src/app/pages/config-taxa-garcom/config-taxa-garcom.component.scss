@@ -1,0 +1,101 @@
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+}
+
+.panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.panel-note {
+  border-color: rgba(230, 57, 0, 0.25);
+  background: rgba(230, 57, 0, 0.05);
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 0 0 0.75rem;
+}
+
+.row-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 44px;
+  cursor: pointer;
+  margin-bottom: 0.85rem;
+  font-weight: 600;
+}
+
+.row-toggle input[type='checkbox'] {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--accent);
+}
+
+.valor-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.valor-row--off {
+  opacity: 0.55;
+}
+
+.field.w-sm {
+  min-width: 8rem;
+}
+
+.field label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+
+.field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.45rem 0.65rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: inherit;
+}
+
+.preview {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.err {
+  color: var(--warn);
+  font-size: 0.88rem;
+  margin: 0.65rem 0 0;
+}
+
+.ok {
+  color: #6bcb77;
+  font-size: 0.88rem;
+  margin: 0.65rem 0 0;
+}
+
+.btn {
+  min-height: 44px;
+}
+
+@media (max-width: 520px) {
+  .valor-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

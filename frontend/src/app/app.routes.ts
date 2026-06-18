@@ -49,6 +49,12 @@ export const routes: Routes = [
           import('./pages/empresa-dados/empresa-dados.component').then((m) => m.EmpresaDadosComponent),
       },
       {
+        path: 'config/taxa-garcom',
+        canActivate: [atendimentoGuard],
+        loadComponent: () =>
+          import('./pages/config-taxa-garcom/config-taxa-garcom.component').then((m) => m.ConfigTaxaGarcomComponent),
+      },
+      {
         path: 'estoque',
         canActivate: [atendimentoGuard],
         loadComponent: () => import('./pages/estoque/estoque.component').then((m) => m.EstoqueComponent),

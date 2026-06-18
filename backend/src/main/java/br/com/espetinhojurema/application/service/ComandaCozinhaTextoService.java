@@ -90,6 +90,8 @@ public class ComandaCozinhaTextoService {
 
         // ── Itens ─────────────────────────────────────────────────────────────
         appendSecaoItens(sb, p, incluirTotal, itemIdCorte);
+        appendCouvertArtistico(sb, p, incluirTotal);
+        appendTaxaGarcom(sb, p, incluirTotal);
 
         // ── Separador ────────────────────────────────────────────────────────
         sb.append(separador()).append('\n');
@@ -257,5 +259,39 @@ public class ComandaCozinhaTextoService {
         if (t.length() >= W) return t;
         int pad = (W - t.length()) / 2;
         return " ".repeat(pad) + t;
+    }
+
+    private static void appendCouvertArtistico(StringBuilder sb, PedidoDetalheView p, boolean incluirTotal) {
+        if (!incluirTotal) {
+            return;
+        }
+        BigDecimal valor = p.valorCouvertArtistico();
+        if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+        int pessoas = p.couvertPessoasCobradas() != null ? p.couvertPessoasCobradas() : 1;
+        BigDecimal unit = p.valorCouvertPorPessoa() != null ? p.valorCouvertPorPessoa() : valor;
+        sb.append(pessoas).append("x COUVERT ARTISTICO").append('\n');
+        sb.append("   un R$ ")
+                .append(formatValorPt(unit))
+                .append(" x ")
+                .append(pessoas)
+                .append(" = R$ ")
+                .append(formatValorPt(valor))
+                .append('\n');
+    }
+
+    private static void appendTaxaGarcom(StringBuilder sb, PedidoDetalheView p, boolean incluirTotal) {
+        if (!incluirTotal) {
+            return;
+        }
+        BigDecimal valor = p.valorTaxaGarcom();
+        if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+        BigDecimal pct = p.taxaGarcomPercentualAplicado();
+        String rotuloPct = pct != null ? formatValorPt(pct) + "%" : "";
+        sb.append("TAXA GARCOM (").append(rotuloPct).append(")").append('\n');
+        sb.append("   R$ ").append(formatValorPt(valor)).append('\n');
     }
 }

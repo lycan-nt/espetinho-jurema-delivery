@@ -321,6 +321,20 @@
   color: #ff8a8a;
 }
 
+.couvert-pill {
+  display: flex;
+  align-items: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(230, 57, 0, 0.14);
+  color: var(--accent);
+  border: 1px solid rgba(230, 57, 0, 0.28);
+  white-space: nowrap;
+}
+
 .caixa-dot-mobile {
   display: none;
   width: 9px;
@@ -402,6 +416,10 @@
     .caixa-dot-mobile {
       display: block;
     }
+  }
+
+  .couvert-pill {
+    display: none;
   }
 }
 

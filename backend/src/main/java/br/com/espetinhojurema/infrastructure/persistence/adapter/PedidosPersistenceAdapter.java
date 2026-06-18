@@ -1,6 +1,7 @@
 package br.com.espetinhojurema.infrastructure.persistence.adapter;
 
 import br.com.espetinhojurema.application.command.CriarPedidoCommand;
+import br.com.espetinhojurema.application.model.CouvertArtisticoCalculo;
 import br.com.espetinhojurema.application.model.ItemPedidoView;
 import br.com.espetinhojurema.application.model.PagamentoPedidoView;
 import br.com.espetinhojurema.application.model.MesaTransferenciaView;
@@ -23,7 +24,10 @@ import br.com.espetinhojurema.infrastructure.persistence.entity.ProdutoEntity;
 import br.com.espetinhojurema.infrastructure.persistence.repository.ClienteJpaRepository;
 import br.com.espetinhojurema.infrastructure.persistence.repository.ColaboradorJpaRepository;
 import br.com.espetinhojurema.infrastructure.persistence.repository.MesaJpaRepository;
+import br.com.espetinhojurema.application.model.TaxaGarcomCalculo;
+import br.com.espetinhojurema.application.service.CouvertArtisticoOperacaoService;
 import br.com.espetinhojurema.application.service.EstoqueOperacaoService;
+import br.com.espetinhojurema.application.service.TaxaGarcomOperacaoService;
 import br.com.espetinhojurema.infrastructure.persistence.repository.ItemPedidoJpaRepository;
 import br.com.espetinhojurema.infrastructure.persistence.repository.MesaTransferenciaJpaRepository;
 import br.com.espetinhojurema.infrastructure.persistence.repository.PedidoJpaRepository;
@@ -58,6 +62,8 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
     private final ClienteJpaRepository clienteJpaRepository;
     private final ProdutoJpaRepository produtoJpaRepository;
     private final EstoqueOperacaoService estoqueOperacaoService;
+    private final CouvertArtisticoOperacaoService couvertArtisticoOperacaoService;
+    private final TaxaGarcomOperacaoService taxaGarcomOperacaoService;
     private final PedidoEventPublisherPort pedidoEventPublisherPort;
     private final MesaTransferenciaJpaRepository mesaTransferenciaJpaRepository;
     private final ItemPedidoJpaRepository itemPedidoJpaRepository;
@@ -69,6 +75,8 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
             ClienteJpaRepository clienteJpaRepository,
             ProdutoJpaRepository produtoJpaRepository,
             EstoqueOperacaoService estoqueOperacaoService,
+            CouvertArtisticoOperacaoService couvertArtisticoOperacaoService,
+            TaxaGarcomOperacaoService taxaGarcomOperacaoService,
             PedidoEventPublisherPort pedidoEventPublisherPort,
             MesaTransferenciaJpaRepository mesaTransferenciaJpaRepository,
             ItemPedidoJpaRepository itemPedidoJpaRepository) {
@@ -78,6 +86,8 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
         this.clienteJpaRepository = clienteJpaRepository;
         this.produtoJpaRepository = produtoJpaRepository;
         this.estoqueOperacaoService = estoqueOperacaoService;
+        this.couvertArtisticoOperacaoService = couvertArtisticoOperacaoService;
+        this.taxaGarcomOperacaoService = taxaGarcomOperacaoService;
         this.pedidoEventPublisherPort = pedidoEventPublisherPort;
         this.mesaTransferenciaJpaRepository = mesaTransferenciaJpaRepository;
         this.itemPedidoJpaRepository = itemPedidoJpaRepository;
@@ -231,7 +241,8 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
         BigDecimal valorRemover = item.getPrecoUnitario()
                 .multiply(BigDecimal.valueOf(qCancel))
                 .setScale(2, RoundingMode.HALF_UP);
-        BigDecimal novoTotal = totalItens(pedido).subtract(valorRemover).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal novoSubtotal = totalItens(pedido).subtract(valorRemover).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal novoTotal = totalConta(pedido, novoSubtotal);
         BigDecimal pago = somarPagamentos(pedido);
         if (pago.subtract(novoTotal).compareTo(EPS) > 0) {
             throw new BusinessException(
@@ -270,7 +281,7 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
             estoqueOperacaoService.restaurarItensPedido(pedido);
         }
         if (novoStatus == PedidoStatus.PAGO) {
-            BigDecimal total = totalItens(pedido);
+            BigDecimal total = totalConta(pedido);
             BigDecimal pago = somarPagamentos(pedido);
             if (total.compareTo(BigDecimal.ZERO) > 0 && pago.add(EPS).compareTo(total) < 0) {
                 throw new BusinessException(
@@ -307,7 +318,7 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
             throw new BusinessException("Valor inválido");
         }
         BigDecimal valorArred = valor.setScale(2, RoundingMode.HALF_UP);
-        BigDecimal total = totalItens(pedido);
+        BigDecimal total = totalConta(pedido);
         BigDecimal jaPago = somarPagamentos(pedido);
         BigDecimal restante = total.subtract(jaPago).setScale(2, RoundingMode.HALF_UP);
 
@@ -454,10 +465,7 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
     }
 
     private PedidoListaView mapearLista(PedidoEntity p) {
-        BigDecimal total = p.getItens().stream()
-                .filter(i -> !i.isCancelado())
-                .map(i -> i.getPrecoUnitario().multiply(BigDecimal.valueOf(i.getQuantidade())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        TotaisContaPedido totais = calcularTotaisConta(p, totalItens(p));
         Integer mesaNum = p.getMesa() != null ? p.getMesa().getNumero() : null;
         Long mesaId = p.getMesa() != null ? p.getMesa().getId() : null;
         String colab = p.getColaborador() != null ? p.getColaborador().getNome() : null;
@@ -469,7 +477,10 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
                 mesaNum,
                 colab,
                 p.getCriadoEm(),
-                total);
+                totais.subtotalItens(),
+                totais.couvert().valorTotal(),
+                totais.taxaGarcom().valorTotal(),
+                totais.total());
     }
 
     private PedidoDetalheView mapearDetalhe(PedidoEntity p) {
@@ -487,10 +498,21 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
                         i.getCanceladoPorLogin() != null ? i.getCanceladoPorLogin() : ""))
                 .toList();
 
-        BigDecimal total = itens.stream()
+        BigDecimal subtotal = itens.stream()
                 .filter(i -> !i.cancelado())
                 .map(i -> i.precoUnitario().multiply(BigDecimal.valueOf(i.quantidade())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        TotaisContaPedido totais = calcularTotaisConta(p, subtotal);
+        CouvertArtisticoCalculo couvert = totais.couvert();
+        TaxaGarcomCalculo taxaGarcom = totais.taxaGarcom();
+        BigDecimal valorCouvert = couvert.valorTotal();
+        BigDecimal valorTaxaGarcom = taxaGarcom.valorTotal();
+        BigDecimal total = totais.total();
+        BigDecimal valorCouvertPorPessoa = couvert.aplicavel() ? couvert.valorPorPessoa() : null;
+        Integer couvertPessoas = couvert.aplicavel() ? couvert.pessoasCobradas() : null;
+        BigDecimal taxaGarcomPct = taxaGarcom.aplicavel() ? taxaGarcom.percentualAplicado() : null;
 
         Long mesaId = p.getMesa() != null ? p.getMesa().getId() : null;
         Integer mesaNum = p.getMesa() != null ? p.getMesa().getNumero() : null;
@@ -525,6 +547,12 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
                 p.isDocumentoFiscal(),
                 p.getCriadoEm(),
                 itens,
+                subtotal,
+                valorCouvert,
+                valorCouvertPorPessoa,
+                couvertPessoas,
+                valorTaxaGarcom,
+                taxaGarcomPct,
                 total,
                 pagamentos,
                 totalPago,
@@ -542,6 +570,33 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
         return new PagamentoPedidoView(
                 pg.getId(), pg.getForma(), pg.getValor(), pg.getValorRecebidoDinheiro(), troco);
     }
+
+    private BigDecimal totalConta(PedidoEntity p) {
+        return totalConta(p, totalItens(p));
+    }
+
+    private BigDecimal totalConta(PedidoEntity p, BigDecimal subtotalItens) {
+        return calcularTotaisConta(p, subtotalItens).total();
+    }
+
+    private TotaisContaPedido calcularTotaisConta(PedidoEntity p, BigDecimal subtotalItens) {
+        BigDecimal subtotal = subtotalItens != null ? subtotalItens : BigDecimal.ZERO;
+        subtotal = subtotal.setScale(2, RoundingMode.HALF_UP);
+        CouvertArtisticoCalculo couvert =
+                couvertArtisticoOperacaoService.calcular(p.getTipo(), p.getPessoas());
+        TaxaGarcomCalculo taxaGarcom = taxaGarcomOperacaoService.calcular(p.getTipo(), subtotal);
+        BigDecimal total = subtotal
+                .add(couvert.valorTotal())
+                .add(taxaGarcom.valorTotal())
+                .setScale(2, RoundingMode.HALF_UP);
+        return new TotaisContaPedido(subtotal, couvert, taxaGarcom, total);
+    }
+
+    private record TotaisContaPedido(
+            BigDecimal subtotalItens,
+            CouvertArtisticoCalculo couvert,
+            TaxaGarcomCalculo taxaGarcom,
+            BigDecimal total) {}
 
     private static BigDecimal totalItens(PedidoEntity p) {
         return p.getItens().stream()

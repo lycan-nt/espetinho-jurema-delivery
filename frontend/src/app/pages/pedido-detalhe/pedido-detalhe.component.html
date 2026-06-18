@@ -261,6 +261,38 @@
         </li>
       }
     </ul>
+    @if ((pedido.valorCouvertArtistico ?? 0) > 0) {
+      <div class="couvert-resumo">
+        <span class="couvert-resumo__nome">Couvert artístico</span>
+        <span class="couvert-resumo__det">
+          {{ pedido.couvertPessoasCobradas ?? pedido.pessoas ?? 1 }} ×
+          {{ pedido.valorCouvertPorPessoa | number : '1.2-2' }}
+        </span>
+        <span class="couvert-resumo__valor">{{ pedido.valorCouvertArtistico | number : '1.2-2' }}</span>
+      </div>
+    }
+    @if ((pedido.valorTaxaGarcom ?? 0) > 0) {
+      <div class="couvert-resumo couvert-resumo--taxa">
+        <span class="couvert-resumo__nome">Taxa do garçom</span>
+        <span class="couvert-resumo__det">{{ pedido.taxaGarcomPercentualAplicado | number : '1.0-2' }}% s/ itens</span>
+        <span class="couvert-resumo__valor">{{ pedido.valorTaxaGarcom | number : '1.2-2' }}</span>
+      </div>
+    }
+    @if (
+      (pedido.subtotalItens ?? 0) > 0 &&
+      ((pedido.valorCouvertArtistico ?? 0) > 0 || (pedido.valorTaxaGarcom ?? 0) > 0)
+    ) {
+      <p class="subtle total-breakdown">
+        Itens {{ (pedido.subtotalItens ?? 0) | number : '1.2-2' }}
+        @if ((pedido.valorCouvertArtistico ?? 0) > 0) {
+          + couvert {{ pedido.valorCouvertArtistico | number : '1.2-2' }}
+        }
+        @if ((pedido.valorTaxaGarcom ?? 0) > 0) {
+          + garçom {{ pedido.valorTaxaGarcom | number : '1.2-2' }}
+        }
+        = {{ pedido.total | number : '1.2-2' }}
+      </p>
+    }
   </div>
 
   @if (

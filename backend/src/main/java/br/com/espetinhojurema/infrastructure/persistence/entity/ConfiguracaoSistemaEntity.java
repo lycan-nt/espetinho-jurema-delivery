@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.Instant;
 import org.hibernate.annotations.ColumnDefault;
 
@@ -18,6 +19,22 @@ public class ConfiguracaoSistemaEntity {
 
     @Column(nullable = false)
     private boolean estoqueObrigatorio = false;
+
+    /** Couvert artístico do dia: cobrado por pessoa em pedidos de mesa quando ativo. */
+    @Column(name = "couvert_artistico_ativo", nullable = false)
+    @ColumnDefault("false")
+    private boolean couvertArtisticoAtivo = false;
+
+    @Column(name = "couvert_artistico_valor", precision = 10, scale = 2)
+    private BigDecimal couvertArtisticoValorPorPessoa = BigDecimal.ZERO;
+
+    /** Taxa de serviço (garçom): percentual sobre subtotal dos itens em pedidos de mesa. */
+    @Column(name = "taxa_garcom_habilitada", nullable = false)
+    @ColumnDefault("false")
+    private boolean taxaGarcomHabilitada = false;
+
+    @Column(name = "taxa_garcom_percentual", precision = 5, scale = 2)
+    private BigDecimal taxaGarcomPercentual = new BigDecimal("10.00");
 
     /** Nome da fila CUPS (`lpstat -p`), ex.: térmica USB no Mac. Se vazio, comanda/cupom só no navegador. */
     @Column(name = "nome_impressora_lp", length = 200)
@@ -116,6 +133,38 @@ public class ConfiguracaoSistemaEntity {
 
     public void setEstoqueObrigatorio(boolean estoqueObrigatorio) {
         this.estoqueObrigatorio = estoqueObrigatorio;
+    }
+
+    public boolean isCouvertArtisticoAtivo() {
+        return couvertArtisticoAtivo;
+    }
+
+    public void setCouvertArtisticoAtivo(boolean couvertArtisticoAtivo) {
+        this.couvertArtisticoAtivo = couvertArtisticoAtivo;
+    }
+
+    public BigDecimal getCouvertArtisticoValorPorPessoa() {
+        return couvertArtisticoValorPorPessoa;
+    }
+
+    public void setCouvertArtisticoValorPorPessoa(BigDecimal couvertArtisticoValorPorPessoa) {
+        this.couvertArtisticoValorPorPessoa = couvertArtisticoValorPorPessoa;
+    }
+
+    public boolean isTaxaGarcomHabilitada() {
+        return taxaGarcomHabilitada;
+    }
+
+    public void setTaxaGarcomHabilitada(boolean taxaGarcomHabilitada) {
+        this.taxaGarcomHabilitada = taxaGarcomHabilitada;
+    }
+
+    public BigDecimal getTaxaGarcomPercentual() {
+        return taxaGarcomPercentual;
+    }
+
+    public void setTaxaGarcomPercentual(BigDecimal taxaGarcomPercentual) {
+        this.taxaGarcomPercentual = taxaGarcomPercentual;
     }
 
     public String getNomeImpressoraLp() {

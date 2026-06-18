@@ -57,6 +57,8 @@ public class ComprovanteTextoService {
                 sb.append("   Obs: ").append(item.observacao()).append('\n');
             }
         }
+        appendCouvertArtistico(sb, pedido, false);
+        appendTaxaGarcom(sb, pedido, false);
         sb.append(TicketTextoLayout.linhaMenos());
         sb.append("TOTAL: ")
                 .append(pedido.total().setScale(2, RoundingMode.HALF_UP))
@@ -133,6 +135,8 @@ public class ComprovanteTextoService {
                 sb.append("   Obs: ").append(item.observacao()).append('\n');
             }
         }
+        appendCouvertArtistico(sb, pedido, true);
+        appendTaxaGarcom(sb, pedido, true);
         sb.append(TicketTextoLayout.linhaMenos());
         sb.append("TOTAL DA CONTA: ")
                 .append(pedido.total().setScale(2, RoundingMode.HALF_UP))
@@ -173,5 +177,51 @@ public class ComprovanteTextoService {
             case CREDITO -> "Crédito";
             case OUTRO -> "Outro";
         };
+    }
+
+    private static void appendCouvertArtistico(StringBuilder sb, PedidoDetalheView pedido, boolean formatoFechamento) {
+        BigDecimal valor = pedido.valorCouvertArtistico();
+        if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+        int pessoas = pedido.couvertPessoasCobradas() != null ? pedido.couvertPessoasCobradas() : 1;
+        BigDecimal unit = pedido.valorCouvertPorPessoa() != null
+                ? pedido.valorCouvertPorPessoa()
+                : valor;
+        if (formatoFechamento) {
+            sb.append(pessoas)
+                    .append("x COUVERT ARTISTICO ... ")
+                    .append(valor.setScale(2, RoundingMode.HALF_UP))
+                    .append('\n');
+        } else {
+            sb.append(pessoas).append("x COUVERT ARTISTICO\n");
+            sb.append("   ")
+                    .append(unit.setScale(2, RoundingMode.HALF_UP))
+                    .append(" un x ")
+                    .append(pessoas)
+                    .append(" = ")
+                    .append(valor.setScale(2, RoundingMode.HALF_UP))
+                    .append('\n');
+        }
+    }
+
+    private static void appendTaxaGarcom(StringBuilder sb, PedidoDetalheView pedido, boolean formatoFechamento) {
+        BigDecimal valor = pedido.valorTaxaGarcom();
+        if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+        BigDecimal pct = pedido.taxaGarcomPercentualAplicado();
+        String rotuloPct = pct != null
+                ? pct.stripTrailingZeros().toPlainString() + "%"
+                : "";
+        if (formatoFechamento) {
+            sb.append("TAXA GARCOM (").append(rotuloPct).append(") ... ")
+                    .append(valor.setScale(2, RoundingMode.HALF_UP))
+                    .append('\n');
+        } else {
+            sb.append("TAXA GARCOM (").append(rotuloPct).append("): ")
+                    .append(valor.setScale(2, RoundingMode.HALF_UP))
+                    .append('\n');
+        }
     }
 }

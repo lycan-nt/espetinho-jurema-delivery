@@ -89,6 +89,16 @@ export interface EstoqueConfig {
   estoqueObrigatorio: boolean;
 }
 
+export interface CouvertArtisticoConfig {
+  ativo: boolean;
+  valorPorPessoa: number;
+}
+
+export interface TaxaGarcomConfig {
+  habilitada: boolean;
+  percentual: number;
+}
+
 export interface FormaPagamentoTotal {
   forma: FormaPagamento;
   total: number;
@@ -138,6 +148,14 @@ export interface PedidoDetalhe {
   documentoFiscal: boolean;
   criadoEm: string;
   itens: ItemPedido[];
+  /** Soma dos itens (sem couvert). */
+  subtotalItens?: number;
+  /** Valor do couvert artístico neste pedido (0 se não aplicável). */
+  valorCouvertArtistico?: number;
+  valorCouvertPorPessoa?: number | null;
+  couvertPessoasCobradas?: number | null;
+  valorTaxaGarcom?: number;
+  taxaGarcomPercentualAplicado?: number | null;
   total: number;
   /** Presente nas respostas atuais da API; fallback em tela se ausente. */
   pagamentos?: PagamentoPedido[];
@@ -153,7 +171,13 @@ export interface PedidoLista {
   mesaNumero: number | null;
   colaboradorNome: string | null;
   criadoEm: string;
-  totalItens: number;
+  subtotalItens: number;
+  valorCouvertArtistico: number;
+  valorTaxaGarcom: number;
+  /** Total da conta (itens + couvert + taxa garçom). */
+  total: number;
+  /** @deprecated use total — mantido para compatibilidade com respostas antigas */
+  totalItens?: number;
 }
 
 export interface CaixaStatus {

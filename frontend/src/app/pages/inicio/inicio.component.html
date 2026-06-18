@@ -30,6 +30,66 @@
   <p class="err-fat">{{ erroFat }}</p>
 }
 
+@if (auth.usuario()?.perfil === 'ATENDIMENTO') {
+  <section class="panel couvert-panel" aria-labelledby="couvert-title">
+    <div class="couvert-head">
+      <h2 id="couvert-title">Couvert artístico</h2>
+      @if (couvert.config()?.ativo) {
+        <span class="couvert-badge-on">Ativo</span>
+      }
+    </div>
+    <p class="hint">
+      Ative nos dias com música ao vivo. O valor é cobrado <strong>por pessoa</strong> em pedidos de mesa e aparece
+      automaticamente nas comandas e cupons de fechamento.
+      <strong>Não zera sozinho à meia-noite</strong> — permanece até você desmarcar abaixo.
+    </p>
+    <label class="row-toggle">
+      <input
+        type="checkbox"
+        name="couvertAtivo"
+        [ngModel]="couvertAtivo"
+        [disabled]="salvandoCouvert"
+        (ngModelChange)="onCouvertToggle($event)"
+      />
+      <span>Cobrar couvert artístico hoje</span>
+    </label>
+    <div class="couvert-valor-row" [class.couvert-valor-row--off]="!couvertAtivo">
+      <div class="field w-sm">
+        <label for="couvert-valor">Valor por pessoa (R$)</label>
+        <input
+          id="couvert-valor"
+          type="number"
+          min="0"
+          step="0.01"
+          inputmode="decimal"
+          name="couvertValor"
+          [(ngModel)]="couvertValor"
+          [disabled]="salvandoCouvert"
+        />
+      </div>
+      @if (couvertAtivo && couvertValor > 0) {
+        <p class="couvert-preview subtle">
+          Ex.: mesa com 2 pessoas → couvert de {{ couvertValor * 2 | number : '1.2-2' }} na conta.
+        </p>
+      }
+    </div>
+    <button
+      type="button"
+      class="btn btn-primary"
+      [disabled]="salvandoCouvert || (!couvertAtivo && couvert.config()?.ativo !== true)"
+      (click)="salvarCouvert()"
+    >
+      {{ salvandoCouvert ? 'Salvando…' : couvertAtivo ? 'Salvar e ativar' : 'Desativar couvert' }}
+    </button>
+    @if (erroCouvert) {
+      <p class="err-fat">{{ erroCouvert }}</p>
+    }
+    @if (couvertOk) {
+      <p class="couvert-ok">{{ couvertOk }}</p>
+    }
+  </section>
+}
+
 <div class="actions">
   <a class="btn btn-primary" routerLink="/mesas">Controle de mesas</a>
   <a class="btn btn-ghost" routerLink="/pedidos">Pedidos</a>

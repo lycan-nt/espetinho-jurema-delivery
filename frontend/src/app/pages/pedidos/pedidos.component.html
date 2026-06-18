@@ -43,7 +43,7 @@
           <td><span class="pill">{{ p.status }}</span></td>
           <td>{{ p.mesaNumero ?? '—' }}</td>
           <td>{{ p.colaboradorNome ?? '—' }}</td>
-          <td>{{ p.totalItens | number : '1.2-2' }}</td>
+          <td>{{ p.total | number : '1.2-2' }}</td>
           <td><a [routerLink]="['/pedidos', p.id]">Abrir</a></td>
         </tr>
       }

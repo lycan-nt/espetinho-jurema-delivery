@@ -13,6 +13,9 @@ public record PedidoListaView(
         Integer mesaNumero,
         String colaboradorNome,
         Instant criadoEm,
-        BigDecimal totalItens
+        BigDecimal subtotalItens,
+        BigDecimal valorCouvertArtistico,
+        BigDecimal valorTaxaGarcom,
+        BigDecimal total
 ) {
 }

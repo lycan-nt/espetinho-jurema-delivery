@@ -9,6 +9,8 @@ import {
   Cliente,
   Colaborador,
   EstoqueConfig,
+  CouvertArtisticoConfig,
+  TaxaGarcomConfig,
   FaturamentoResumo,
   FormaPagamento,
   MesaComOcupacao,
@@ -409,6 +411,28 @@ export class ApiBackendService {
 
   patchEstoqueConfig(estoqueObrigatorio: boolean): Observable<EstoqueConfig> {
     return this.http.patch<EstoqueConfig>(`${this.base}/estoque/config`, { estoqueObrigatorio });
+  }
+
+  getCouvertArtisticoConfig(): Observable<CouvertArtisticoConfig> {
+    return this.http.get<CouvertArtisticoConfig>(`${this.base}/couvert-artistico/config`);
+  }
+
+  patchCouvertArtisticoConfig(ativo: boolean, valorPorPessoa: number): Observable<CouvertArtisticoConfig> {
+    return this.http.patch<CouvertArtisticoConfig>(`${this.base}/couvert-artistico/config`, {
+      ativo,
+      valorPorPessoa,
+    });
+  }
+
+  getTaxaGarcomConfig(): Observable<TaxaGarcomConfig> {
+    return this.http.get<TaxaGarcomConfig>(`${this.base}/taxa-garcom/config`);
+  }
+
+  patchTaxaGarcomConfig(habilitada: boolean, percentual: number): Observable<TaxaGarcomConfig> {
+    return this.http.patch<TaxaGarcomConfig>(`${this.base}/taxa-garcom/config`, {
+      habilitada,
+      percentual,
+    });
   }
 
   entradaEstoque(produtoId: number, quantidade: number, referencia?: string | null): Observable<void> {

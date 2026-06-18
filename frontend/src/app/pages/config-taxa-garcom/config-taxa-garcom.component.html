@@ -1,0 +1,61 @@
+<h1 class="page-title">Taxa do garçom</h1>
+<p class="subtle">Configuração fixa do salão — quando habilitada, entra em todas as contas de mesa.</p>
+
+@if (carregando) {
+  <p class="subtle">Carregando…</p>
+} @else {
+  <div class="panel">
+    <h2>Taxa de serviço</h2>
+    <p class="hint">
+      Percentual calculado sobre o <strong>subtotal dos itens</strong> (não inclui couvert artístico). Permanece
+      ativa até você desabilitar aqui — não zera sozinha.
+    </p>
+    <label class="row-toggle">
+      <input
+        type="checkbox"
+        name="taxaGarcom"
+        [(ngModel)]="habilitada"
+        [disabled]="salvando"
+      />
+      <span>Cobrar taxa do garçom nas mesas</span>
+    </label>
+    <div class="valor-row" [class.valor-row--off]="!habilitada">
+      <div class="field w-sm">
+        <label for="pct-garcom">Percentual (%)</label>
+        <input
+          id="pct-garcom"
+          type="number"
+          min="0"
+          max="100"
+          step="0.01"
+          inputmode="decimal"
+          name="pctGarcom"
+          [(ngModel)]="percentual"
+          [disabled]="salvando"
+        />
+      </div>
+      @if (habilitada && percentual > 0) {
+        <p class="preview subtle">
+          Ex.: itens R$ 100,00 → taxa de {{ (100 * percentual) / 100 | number : '1.2-2' }} na conta.
+        </p>
+      }
+    </div>
+    <button type="button" class="btn btn-primary" [disabled]="salvando" (click)="salvar()">
+      {{ salvando ? 'Salvando…' : 'Salvar' }}
+    </button>
+    @if (erro) {
+      <p class="err">{{ erro }}</p>
+    }
+    @if (ok) {
+      <p class="ok">{{ ok }}</p>
+    }
+  </div>
+
+  <div class="panel panel-note">
+    <h2>Couvert artístico</h2>
+    <p class="hint">
+      O couvert (música ao vivo) é ligado/desligado na página <strong>Início</strong>, porque nem todo dia tem show.
+      Também <strong>não zera automaticamente</strong>: fica ativo até alguém desmarcar no Início.
+    </p>
+  </div>
+}

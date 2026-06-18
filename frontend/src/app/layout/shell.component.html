@@ -59,6 +59,9 @@
               <a routerLink="/config/empresa" routerLinkActive="active" (click)="$event.stopPropagation()">
                 <span class="ic-sub">🏢</span> Dados da empresa
               </a>
+              <a routerLink="/config/taxa-garcom" routerLinkActive="active" (click)="$event.stopPropagation()">
+                <span class="ic-sub">%</span> Taxa do garçom
+              </a>
               <a routerLink="/cadastro/produtos" routerLinkActive="active" (click)="$event.stopPropagation()">
                 <span class="ic-sub">◆</span> Produtos
               </a>
@@ -104,6 +107,11 @@
           <span class="caixa-text-full">{{ caixaAberto ? 'CAIXA ABERTO' : 'CAIXA FECHADO' }}</span>
           <span class="caixa-dot-mobile"></span>
         </span>
+        @if (couvert.config()?.ativo) {
+          <span class="couvert-pill" title="Couvert artístico ativo">
+            Couvert {{ couvert.config()?.valorPorPessoa | number : '1.2-2' }}/pessoa
+          </span>
+        }
       </div>
     </header>
     <main class="content">

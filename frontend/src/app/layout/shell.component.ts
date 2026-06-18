@@ -1,10 +1,11 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet, Router, NavigationEnd } from '@angular/router';
-import { NgClass } from '@angular/common';
+import { NgClass, DecimalPipe } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { RealtimeService } from '../core/realtime.service';
 import { ApiBackendService } from '../core/api-backend.service';
 import { AuthService } from '../core/auth.service';
+import { CouvertArtisticoService } from '../core/couvert-artistico.service';
 import { APP_VERSION_LABEL } from '../core/app-version';
 import { AlertasAtendimentoPanelComponent } from './alertas-atendimento-panel.component';
 
@@ -12,6 +13,7 @@ const CONFIG_ROUTES = [
   '/config/impressao',
   '/config/backup',
   '/config/empresa',
+  '/config/taxa-garcom',
   '/cadastro/produtos',
   '/cadastro/usuarios',
   '/config/acesso-movel',
@@ -19,13 +21,14 @@ const CONFIG_ROUTES = [
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass, AlertasAtendimentoPanelComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass, DecimalPipe, AlertasAtendimentoPanelComponent],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
 })
 export class ShellComponent implements OnInit, OnDestroy {
   readonly appVersionLabel = APP_VERSION_LABEL;
   readonly auth = inject(AuthService);
+  readonly couvert = inject(CouvertArtisticoService);
   private readonly realtime = inject(RealtimeService);
   private readonly api = inject(ApiBackendService);
   private readonly router = inject(Router);
@@ -43,6 +46,7 @@ export class ShellComponent implements OnInit, OnDestroy {
     this.tick = setInterval(() => this.relogioAtualizar(), 30_000);
     this.realtime.conectar();
     this.api.getCaixaStatus().subscribe((s) => (this.caixaAberto = s.aberto));
+    this.couvert.recarregar().subscribe({ error: () => {} });
 
     const atualizarConfig = (url: string) => {
       if (CONFIG_ROUTES.some((r) => url.startsWith(r))) {

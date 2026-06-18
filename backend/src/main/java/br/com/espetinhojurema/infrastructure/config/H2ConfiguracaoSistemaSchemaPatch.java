@@ -27,6 +27,16 @@ public class H2ConfiguracaoSistemaSchemaPatch implements ApplicationRunner {
         "comanda_cab_exibir_instagram"
     };
 
+    private static final String[] COLUNAS_TAXA_GARCOM = {
+        "taxa_garcom_habilitada BOOLEAN DEFAULT FALSE NOT NULL",
+        "taxa_garcom_percentual DECIMAL(5,2) DEFAULT 10"
+    };
+
+    private static final String[] COLUNAS_COUVERT = {
+        "couvert_artistico_ativo BOOLEAN DEFAULT FALSE NOT NULL",
+        "couvert_artistico_valor DECIMAL(10,2) DEFAULT 0"
+    };
+
     private static final String[] COLUNAS_BACKUP = {
         "backup_diretorio VARCHAR(2000)",
         "backup_ultimo_sucesso TIMESTAMP",
@@ -60,6 +70,12 @@ public class H2ConfiguracaoSistemaSchemaPatch implements ApplicationRunner {
                         "ALTER TABLE configuracao_sistema ADD COLUMN IF NOT EXISTS "
                                 + col
                                 + " BOOLEAN DEFAULT TRUE NOT NULL");
+            }
+            for (String def : COLUNAS_TAXA_GARCOM) {
+                st.execute("ALTER TABLE configuracao_sistema ADD COLUMN IF NOT EXISTS " + def);
+            }
+            for (String def : COLUNAS_COUVERT) {
+                st.execute("ALTER TABLE configuracao_sistema ADD COLUMN IF NOT EXISTS " + def);
             }
             for (String def : COLUNAS_BACKUP) {
                 st.execute("ALTER TABLE configuracao_sistema ADD COLUMN IF NOT EXISTS " + def);
