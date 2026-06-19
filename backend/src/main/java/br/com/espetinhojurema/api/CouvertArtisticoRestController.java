@@ -29,6 +29,7 @@ public class CouvertArtisticoRestController {
     @PatchMapping("/config")
     @PreAuthorize("hasRole('ATENDIMENTO')")
     public CouvertArtisticoConfigView atualizarConfig(@Valid @RequestBody CouvertArtisticoConfigUpdateRequest body) {
-        return couvertArtisticoOperacaoService.atualizarConfig(body.ativo(), body.valorPorPessoa());
+        return couvertArtisticoOperacaoService.atualizarConfig(
+                body.ativo(), body.modo(), body.valorPorPessoa());
     }
 }

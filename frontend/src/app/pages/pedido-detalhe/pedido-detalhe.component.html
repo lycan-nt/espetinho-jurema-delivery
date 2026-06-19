@@ -265,8 +265,14 @@
       <div class="couvert-resumo">
         <span class="couvert-resumo__nome">Couvert artístico</span>
         <span class="couvert-resumo__det">
-          {{ pedido.couvertPessoasCobradas ?? pedido.pessoas ?? 1 }} ×
-          {{ pedido.valorCouvertPorPessoa | number : '1.2-2' }}
+          @if (pedido.couvertModo === 'POR_MESA') {
+            valor fixo por mesa (1 cobrança)
+          } @else if ((pedido.couvertPessoasCobradas ?? pedido.pessoas ?? 1) > 1) {
+            {{ pedido.couvertPessoasCobradas ?? pedido.pessoas ?? 1 }} pessoa(s) × R$
+            {{ pedido.valorCouvertPorPessoa | number : '1.2-2' }}/pessoa
+          } @else {
+            1 pessoa × R$ {{ pedido.valorCouvertPorPessoa | number : '1.2-2' }}/pessoa
+          }
         </span>
         <span class="couvert-resumo__valor">{{ pedido.valorCouvertArtistico | number : '1.2-2' }}</span>
       </div>

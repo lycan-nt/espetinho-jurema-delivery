@@ -5,7 +5,7 @@ FRONTEND="$ROOT/frontend"
 BACKEND="$ROOT/backend"
 STATIC="$BACKEND/src/main/resources/static"
 INSTALAR="$ROOT/deploy/instalar"
-JAR_NAME="espetinho-jurema-api-2.2.0-SNAPSHOT.jar"
+JAR_NAME="espetinho-jurema-api-2.2.1-SNAPSHOT.jar"
 DEPLOY_JAR="espetinho-app.jar"
 
 echo "========================================"
@@ -46,7 +46,35 @@ fi
 echo "OK."
 echo
 
+check_java_21() {
+  local java_bin=""
+  if [ -n "$JAVA_HOME" ] && [ -x "$JAVA_HOME/bin/java" ]; then
+    java_bin="$JAVA_HOME/bin/java"
+  elif command -v java >/dev/null 2>&1; then
+    java_bin="java"
+  fi
+  if [ -z "$java_bin" ]; then
+    echo "ERRO: Java não encontrado. Instale JDK 21 e defina JAVA_HOME."
+    echo "  Windows (winget): winget install Microsoft.OpenJDK.21"
+    echo "  Depois (Git Bash): export JAVA_HOME=\"/c/Program Files/Microsoft/jdk-21.0.8.9-hotspot\""
+    exit 1
+  fi
+  local major
+  major=$("$java_bin" -version 2>&1 | sed -n 's/.*version "\([0-9]*\).*/\1/p' | head -1)
+  if [ -z "$major" ] || [ "$major" -lt 21 ]; then
+    echo "ERRO: o backend exige JDK 21+, mas foi detectado Java ${major:-?}."
+    echo "  JAVA_HOME atual: ${JAVA_HOME:-(não definido)}"
+    echo "  Versão: $("$java_bin" -version 2>&1 | head -1)"
+    echo
+    echo "Instale JDK 21, aponte JAVA_HOME para ele e rode o build de novo."
+    echo "  winget install Microsoft.OpenJDK.21"
+    exit 1
+  fi
+  echo "Java OK: $("$java_bin" -version 2>&1 | head -1)"
+}
+
 echo "[3/5] Build do backend (Maven)..."
+check_java_21
 cd "$BACKEND"
 if [ -x ./mvnw ]; then
   ./mvnw -q package -DskipTests

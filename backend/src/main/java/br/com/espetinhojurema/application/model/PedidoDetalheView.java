@@ -1,5 +1,6 @@
 package br.com.espetinhojurema.application.model;
 
+import br.com.espetinhojurema.domain.model.CouvertArtisticoModo;
 import br.com.espetinhojurema.domain.model.PedidoStatus;
 import br.com.espetinhojurema.domain.model.PedidoTipo;
 import java.math.BigDecimal;
@@ -24,6 +25,7 @@ public record PedidoDetalheView(
         BigDecimal subtotalItens,
         BigDecimal valorCouvertArtistico,
         BigDecimal valorCouvertPorPessoa,
+        CouvertArtisticoModo couvertModo,
         Integer couvertPessoasCobradas,
         BigDecimal valorTaxaGarcom,
         BigDecimal taxaGarcomPercentualAplicado,

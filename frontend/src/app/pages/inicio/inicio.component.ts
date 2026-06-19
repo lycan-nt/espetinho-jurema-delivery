@@ -6,7 +6,7 @@ import { ApiBackendService } from '../../core/api-backend.service';
 import { AuthService } from '../../core/auth.service';
 import { CouvertArtisticoService } from '../../core/couvert-artistico.service';
 import { periodoMesLocal } from '../../core/periodo.util';
-import { FaturamentoResumo, MesaResumo } from '../../models/api.models';
+import { CouvertArtisticoConfig, CouvertArtisticoModo, FaturamentoResumo, MesaResumo } from '../../models/api.models';
 
 @Component({
   selector: 'app-inicio',
@@ -24,6 +24,7 @@ export class InicioComponent implements OnInit {
   erroFat: string | null = null;
 
   couvertAtivo = false;
+  couvertModo: CouvertArtisticoModo = 'POR_PESSOA';
   couvertValor = 0;
   salvandoCouvert = false;
   erroCouvert: string | null = null;
@@ -46,8 +47,9 @@ export class InicioComponent implements OnInit {
     }
   }
 
-  private syncCouvertForm(cfg: { ativo: boolean; valorPorPessoa: number }): void {
+  private syncCouvertForm(cfg: CouvertArtisticoConfig): void {
     this.couvertAtivo = cfg.ativo;
+    this.couvertModo = cfg.modo ?? 'POR_PESSOA';
     this.couvertValor = cfg.valorPorPessoa;
   }
 
@@ -66,22 +68,29 @@ export class InicioComponent implements OnInit {
     this.couvertOk = null;
     const valor = Number(this.couvertValor);
     if (this.couvertAtivo && (!Number.isFinite(valor) || valor <= 0)) {
-      this.erroCouvert = 'Informe um valor por pessoa maior que zero para ativar.';
+      this.erroCouvert =
+        this.couvertModo === 'POR_MESA'
+          ? 'Informe um valor por mesa maior que zero para ativar.'
+          : 'Informe um valor por pessoa maior que zero para ativar.';
       return;
     }
     this.salvandoCouvert = true;
-    this.couvert.salvar(this.couvertAtivo, this.couvertAtivo ? valor : Math.max(0, valor)).subscribe({
-      next: (c) => {
-        this.syncCouvertForm(c);
-        this.couvertOk = c.ativo
-          ? `Couvert ativo: R$ ${c.valorPorPessoa.toFixed(2)} por pessoa em mesas (até desativar).`
-          : 'Couvert desativado.';
-        this.salvandoCouvert = false;
-      },
-      error: (e) => {
-        this.erroCouvert = e?.error?.message ?? 'Não foi possível salvar o couvert.';
-        this.salvandoCouvert = false;
-      },
-    });
+    this.couvert
+      .salvar(this.couvertAtivo, this.couvertModo, this.couvertAtivo ? valor : Math.max(0, valor))
+      .subscribe({
+        next: (c) => {
+          this.syncCouvertForm(c);
+          this.couvertOk = c.ativo
+            ? c.modo === 'POR_MESA'
+              ? `Couvert ativo: R$ ${c.valorPorPessoa.toFixed(2)} por mesa (até desativar).`
+              : `Couvert ativo: R$ ${c.valorPorPessoa.toFixed(2)} por pessoa em mesas (até desativar).`
+            : 'Couvert desativado.';
+          this.salvandoCouvert = false;
+        },
+        error: (e) => {
+          this.erroCouvert = e?.error?.message ?? 'Não foi possível salvar o couvert.';
+          this.salvandoCouvert = false;
+        },
+      });
   }
 }

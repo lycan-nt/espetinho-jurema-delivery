@@ -43,7 +43,7 @@ export class MesasComponent implements OnInit, OnDestroy {
   colaboradorId: number | null = null;
   clienteNome = '';
   descricao = '';
-  pessoas: number | null = 2;
+  pessoas: number | null = 1;
   documentoFiscal = false;
   carregando = false;
   erro: string | null = null;
@@ -129,6 +129,9 @@ export class MesasComponent implements OnInit, OnDestroy {
       this.feedbackMesasTimer = null;
     }
     this.clienteNome = '';
+    if (!m.ocupada) {
+      this.pessoas = 1;
+    }
   }
 
   fecharDrawer(): void {

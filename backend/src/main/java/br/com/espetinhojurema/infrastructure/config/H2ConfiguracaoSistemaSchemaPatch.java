@@ -34,7 +34,8 @@ public class H2ConfiguracaoSistemaSchemaPatch implements ApplicationRunner {
 
     private static final String[] COLUNAS_COUVERT = {
         "couvert_artistico_ativo BOOLEAN DEFAULT FALSE NOT NULL",
-        "couvert_artistico_valor DECIMAL(10,2) DEFAULT 0"
+        "couvert_artistico_valor DECIMAL(10,2) DEFAULT 0",
+        "couvert_artistico_modo VARCHAR(20) DEFAULT 'POR_PESSOA' NOT NULL"
     };
 
     private static final String[] COLUNAS_BACKUP = {

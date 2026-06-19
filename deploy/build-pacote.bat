@@ -10,7 +10,7 @@ set ROOT=%~dp0..
 set FRONTEND=%ROOT%\frontend
 set BACKEND=%ROOT%\backend
 set STATIC=%BACKEND%\src\main\resources\static
-set JAR_NAME=espetinho-jurema-api-2.2.0-SNAPSHOT.jar
+set JAR_NAME=espetinho-jurema-api-2.2.1-SNAPSHOT.jar
 set DEPLOY_JAR=espetinho-app.jar
 
 echo [1/4] Build do frontend (Angular)...
@@ -47,6 +47,26 @@ echo OK.
 echo.
 
 echo [3/4] Build do backend (Maven)...
+echo Verificando Java 21+...
+set "JAVA_BIN="
+if defined JAVA_HOME if exist "%JAVA_HOME%\bin\java.exe" set "JAVA_BIN=%JAVA_HOME%\bin\java.exe"
+if not defined JAVA_BIN for /f "delims=" %%J in ('where java 2^>nul') do ( set "JAVA_BIN=%%J" & goto :java_found )
+:java_found
+if not defined JAVA_BIN (
+  echo ERRO: Java nao encontrado. Instale JDK 21 e defina JAVA_HOME.
+  echo   winget install Microsoft.OpenJDK.21
+  exit /b 1
+)
+for /f "tokens=3 delims= " %%V in ('"%JAVA_BIN%" -version 2^>^&1 ^| findstr /i version') do set "JAVA_VER=%%V"
+set "JAVA_VER=%JAVA_VER:"=%"
+for /f "delims=. tokens=1" %%M in ("%JAVA_VER%") do set "JAVA_MAJOR=%%M"
+if %JAVA_MAJOR% LSS 21 (
+  echo ERRO: backend exige JDK 21+. Detectado: Java %JAVA_MAJOR% ^(%JAVA_BIN%^)
+  echo JAVA_HOME atual: %JAVA_HOME%
+  echo Instale JDK 21, aponte JAVA_HOME e rode o build de novo.
+  exit /b 1
+)
+"%JAVA_BIN%" -version 2>&1 | findstr /i version
 cd /d "%BACKEND%"
 if exist mvnw.cmd (
   call mvnw.cmd -q package -DskipTests

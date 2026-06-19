@@ -180,28 +180,14 @@ public class ComprovanteTextoService {
     }
 
     private static void appendCouvertArtistico(StringBuilder sb, PedidoDetalheView pedido, boolean formatoFechamento) {
-        BigDecimal valor = pedido.valorCouvertArtistico();
-        if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
+        CouvertTicketTexto.CouvertLinha linha = CouvertTicketTexto.dados(pedido);
+        if (linha == null) {
             return;
         }
-        int pessoas = pedido.couvertPessoasCobradas() != null ? pedido.couvertPessoasCobradas() : 1;
-        BigDecimal unit = pedido.valorCouvertPorPessoa() != null
-                ? pedido.valorCouvertPorPessoa()
-                : valor;
         if (formatoFechamento) {
-            sb.append(pessoas)
-                    .append("x COUVERT ARTISTICO ... ")
-                    .append(valor.setScale(2, RoundingMode.HALF_UP))
-                    .append('\n');
+            CouvertTicketTexto.appendComprovanteFechamento(sb, linha);
         } else {
-            sb.append(pessoas).append("x COUVERT ARTISTICO\n");
-            sb.append("   ")
-                    .append(unit.setScale(2, RoundingMode.HALF_UP))
-                    .append(" un x ")
-                    .append(pessoas)
-                    .append(" = ")
-                    .append(valor.setScale(2, RoundingMode.HALF_UP))
-                    .append('\n');
+            CouvertTicketTexto.appendComprovanteDetalhado(sb, linha);
         }
     }
 

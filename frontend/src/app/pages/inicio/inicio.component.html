@@ -39,8 +39,8 @@
       }
     </div>
     <p class="hint">
-      Ative nos dias com música ao vivo. O valor é cobrado <strong>por pessoa</strong> em pedidos de mesa e aparece
-      automaticamente nas comandas e cupons de fechamento.
+      Ative nos dias com música ao vivo. Escolha se cobra <strong>por mesa</strong> (valor fixo, uma vez na conta) ou
+      <strong>por pessoa</strong> (multiplica pelo número de pessoas da mesa). Aparece automaticamente no fechamento.
       <strong>Não zera sozinho à meia-noite</strong> — permanece até você desmarcar abaixo.
     </p>
     <label class="row-toggle">
@@ -53,9 +53,36 @@
       />
       <span>Cobrar couvert artístico hoje</span>
     </label>
+    <fieldset class="couvert-modo" [disabled]="salvandoCouvert">
+      <legend class="sr-only">Forma de cobrança do couvert</legend>
+      <label class="couvert-modo-opt">
+        <input
+          type="radio"
+          name="couvertModo"
+          value="POR_MESA"
+          [(ngModel)]="couvertModo"
+          [disabled]="!couvertAtivo"
+        />
+        <span>Por mesa</span>
+        <span class="couvert-modo-hint">Valor fixo na conta, independente de pessoas</span>
+      </label>
+      <label class="couvert-modo-opt">
+        <input
+          type="radio"
+          name="couvertModo"
+          value="POR_PESSOA"
+          [(ngModel)]="couvertModo"
+          [disabled]="!couvertAtivo"
+        />
+        <span>Por pessoa</span>
+        <span class="couvert-modo-hint">Multiplica pelo Nº de pessoas da mesa</span>
+      </label>
+    </fieldset>
     <div class="couvert-valor-row" [class.couvert-valor-row--off]="!couvertAtivo">
       <div class="field w-sm">
-        <label for="couvert-valor">Valor por pessoa (R$)</label>
+        <label for="couvert-valor">
+          {{ couvertModo === 'POR_MESA' ? 'Valor por mesa (R$)' : 'Valor por pessoa (R$)' }}
+        </label>
         <input
           id="couvert-valor"
           type="number"
@@ -69,7 +96,11 @@
       </div>
       @if (couvertAtivo && couvertValor > 0) {
         <p class="couvert-preview subtle">
-          Ex.: mesa com 2 pessoas → couvert de {{ couvertValor * 2 | number : '1.2-2' }} na conta.
+          @if (couvertModo === 'POR_MESA') {
+            Ex.: qualquer mesa → couvert de {{ couvertValor | number : '1.2-2' }} na conta (uma cobrança).
+          } @else {
+            Ex.: mesa com 2 pessoas → couvert de {{ couvertValor * 2 | number : '1.2-2' }} na conta.
+          }
         </p>
       }
     </div>

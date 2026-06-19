@@ -109,7 +109,12 @@
         </span>
         @if (couvert.config()?.ativo) {
           <span class="couvert-pill" title="Couvert artístico ativo">
-            Couvert {{ couvert.config()?.valorPorPessoa | number : '1.2-2' }}/pessoa
+            Couvert
+            @if (couvert.config()?.modo === 'POR_MESA') {
+              {{ couvert.config()?.valorPorPessoa | number : '1.2-2' }}/mesa
+            } @else {
+              {{ couvert.config()?.valorPorPessoa | number : '1.2-2' }}/pessoa
+            }
           </span>
         }
       </div>

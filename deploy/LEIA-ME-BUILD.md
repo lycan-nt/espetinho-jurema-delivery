@@ -11,6 +11,32 @@ Execute **uma vez** (na sua máquina ou em CI) para gerar a pasta **`deploy/inst
 - **Java 21** — conforme `backend/pom.xml`  
 - **Maven** — opcional se existir **`backend/mvnw`** (Maven Wrapper); o **`deploy/build-pacote`** usa `./mvnw` antes de `mvn`.
 
+### Java 21 no Windows (Git Bash / build)
+
+O erro `release version 21 not supported` significa que o Maven está usando **JDK 17 ou anterior**. O projeto exige **JDK 21**.
+
+1. Instale o JDK 21, por exemplo:
+   ```bat
+   winget install Microsoft.OpenJDK.21
+   ```
+2. Aponte `JAVA_HOME` para a pasta do JDK 21 (ajuste a versão se diferir):
+   ```bash
+   export JAVA_HOME="/c/Program Files/Microsoft/jdk-21.0.8.9-hotspot"
+   export PATH="$JAVA_HOME/bin:$PATH"
+   java -version
+   ```
+3. Rode o build de novo:
+   ```bash
+   ./deploy/build-pacote.sh
+   ```
+
+No **Prompt de comando** (`.bat`), defina antes do build:
+```bat
+set "JAVA_HOME=C:\Program Files\Microsoft\jdk-21.0.8.9-hotspot"
+set "PATH=%JAVA_HOME%\bin;%PATH%"
+deploy\build-pacote.bat
+```
+
 ## Passo a passo
 
 ### Mac ou Linux
@@ -70,4 +96,4 @@ No cliente Windows é preciso baixar o **WinSW-x64.exe** para instalar como serv
 
 ## Nome do JAR gerado pelo Maven
 
-O build espera **`backend/target/espetinho-jurema-api-2.2.0-SNAPSHOT.jar`**. Se mudar `version` ou `artifactId` no `pom.xml`, atualize também **`deploy/build-pacote.sh`** e **`deploy/build-pacote.bat`** (variável `JAR_NAME`).
+O build espera **`backend/target/espetinho-jurema-api-2.2.1-SNAPSHOT.jar`**. Se mudar `version` ou `artifactId` no `pom.xml`, atualize também **`deploy/build-pacote.sh`** e **`deploy/build-pacote.bat`** (variável `JAR_NAME`).

@@ -417,9 +417,14 @@ export class ApiBackendService {
     return this.http.get<CouvertArtisticoConfig>(`${this.base}/couvert-artistico/config`);
   }
 
-  patchCouvertArtisticoConfig(ativo: boolean, valorPorPessoa: number): Observable<CouvertArtisticoConfig> {
+  patchCouvertArtisticoConfig(
+    ativo: boolean,
+    modo: CouvertArtisticoConfig['modo'],
+    valorPorPessoa: number,
+  ): Observable<CouvertArtisticoConfig> {
     return this.http.patch<CouvertArtisticoConfig>(`${this.base}/couvert-artistico/config`, {
       ativo,
+      modo,
       valorPorPessoa,
     });
   }

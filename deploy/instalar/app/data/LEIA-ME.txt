@@ -1,0 +1,2 @@
+Pasta app: apenas o JAR gerado pelo build.
+Os dados do H2 ficam em ..\data na mesma pasta do start.bat.

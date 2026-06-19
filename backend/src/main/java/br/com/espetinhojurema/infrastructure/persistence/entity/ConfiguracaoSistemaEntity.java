@@ -2,11 +2,14 @@ package br.com.espetinhojurema.infrastructure.persistence.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import org.hibernate.annotations.ColumnDefault;
+import br.com.espetinhojurema.domain.model.CouvertArtisticoModo;
 
 @Entity
 @Table(name = "configuracao_sistema")
@@ -20,10 +23,15 @@ public class ConfiguracaoSistemaEntity {
     @Column(nullable = false)
     private boolean estoqueObrigatorio = false;
 
-    /** Couvert artístico do dia: cobrado por pessoa em pedidos de mesa quando ativo. */
+    /** Couvert artístico do dia: cobrado em pedidos de mesa quando ativo ({@link #couvertArtisticoModo}). */
     @Column(name = "couvert_artistico_ativo", nullable = false)
     @ColumnDefault("false")
     private boolean couvertArtisticoAtivo = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "couvert_artistico_modo", length = 20, nullable = false)
+    @ColumnDefault("'POR_PESSOA'")
+    private CouvertArtisticoModo couvertArtisticoModo = CouvertArtisticoModo.POR_PESSOA;
 
     @Column(name = "couvert_artistico_valor", precision = 10, scale = 2)
     private BigDecimal couvertArtisticoValorPorPessoa = BigDecimal.ZERO;
@@ -141,6 +149,14 @@ public class ConfiguracaoSistemaEntity {
 
     public void setCouvertArtisticoAtivo(boolean couvertArtisticoAtivo) {
         this.couvertArtisticoAtivo = couvertArtisticoAtivo;
+    }
+
+    public CouvertArtisticoModo getCouvertArtisticoModo() {
+        return couvertArtisticoModo;
+    }
+
+    public void setCouvertArtisticoModo(CouvertArtisticoModo couvertArtisticoModo) {
+        this.couvertArtisticoModo = couvertArtisticoModo;
     }
 
     public BigDecimal getCouvertArtisticoValorPorPessoa() {

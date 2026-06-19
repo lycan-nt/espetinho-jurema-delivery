@@ -265,20 +265,11 @@ public class ComandaCozinhaTextoService {
         if (!incluirTotal) {
             return;
         }
-        BigDecimal valor = p.valorCouvertArtistico();
-        if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
+        CouvertTicketTexto.CouvertLinha linha = CouvertTicketTexto.dados(p);
+        if (linha == null) {
             return;
         }
-        int pessoas = p.couvertPessoasCobradas() != null ? p.couvertPessoasCobradas() : 1;
-        BigDecimal unit = p.valorCouvertPorPessoa() != null ? p.valorCouvertPorPessoa() : valor;
-        sb.append(pessoas).append("x COUVERT ARTISTICO").append('\n');
-        sb.append("   un R$ ")
-                .append(formatValorPt(unit))
-                .append(" x ")
-                .append(pessoas)
-                .append(" = R$ ")
-                .append(formatValorPt(valor))
-                .append('\n');
+        CouvertTicketTexto.appendComandaFechamento(sb, linha, v -> formatValorPt(v));
     }
 
     private static void appendTaxaGarcom(StringBuilder sb, PedidoDetalheView p, boolean incluirTotal) {

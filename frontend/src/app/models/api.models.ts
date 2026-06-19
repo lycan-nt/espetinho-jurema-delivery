@@ -89,8 +89,11 @@ export interface EstoqueConfig {
   estoqueObrigatorio: boolean;
 }
 
+export type CouvertArtisticoModo = 'POR_MESA' | 'POR_PESSOA';
+
 export interface CouvertArtisticoConfig {
   ativo: boolean;
+  modo: CouvertArtisticoModo;
   valorPorPessoa: number;
 }
 
@@ -153,6 +156,7 @@ export interface PedidoDetalhe {
   /** Valor do couvert artístico neste pedido (0 se não aplicável). */
   valorCouvertArtistico?: number;
   valorCouvertPorPessoa?: number | null;
+  couvertModo?: CouvertArtisticoModo | null;
   couvertPessoasCobradas?: number | null;
   valorTaxaGarcom?: number;
   taxaGarcomPercentualAplicado?: number | null;

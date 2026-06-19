@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { CouvertArtisticoConfig } from '../models/api.models';
+import { CouvertArtisticoConfig, CouvertArtisticoModo } from '../models/api.models';
 import { ApiBackendService } from './api-backend.service';
 
 /** Estado global do couvert artístico do dia (leitura em shell, edição no Início). */
@@ -15,8 +15,12 @@ export class CouvertArtisticoService {
     return this.api.getCouvertArtisticoConfig().pipe(tap((c) => this.config.set(c)));
   }
 
-  salvar(ativo: boolean, valorPorPessoa: number): Observable<CouvertArtisticoConfig> {
-    return this.api.patchCouvertArtisticoConfig(ativo, valorPorPessoa).pipe(
+  salvar(
+    ativo: boolean,
+    modo: CouvertArtisticoModo,
+    valorPorPessoa: number,
+  ): Observable<CouvertArtisticoConfig> {
+    return this.api.patchCouvertArtisticoConfig(ativo, modo, valorPorPessoa).pipe(
       tap((c) => this.config.set(c)),
     );
   }

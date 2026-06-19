@@ -10,6 +10,7 @@ import br.com.espetinhojurema.application.model.PedidoListaView;
 import br.com.espetinhojurema.application.port.out.PedidoEventPublisherPort;
 import br.com.espetinhojurema.application.port.out.PedidosPersistencePort;
 import br.com.espetinhojurema.domain.exception.BusinessException;
+import br.com.espetinhojurema.domain.model.CouvertArtisticoModo;
 import br.com.espetinhojurema.domain.model.FormaPagamento;
 import br.com.espetinhojurema.domain.model.MesaStatus;
 import br.com.espetinhojurema.domain.model.PontoCarne;
@@ -510,8 +511,11 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
         BigDecimal valorCouvert = couvert.valorTotal();
         BigDecimal valorTaxaGarcom = taxaGarcom.valorTotal();
         BigDecimal total = totais.total();
-        BigDecimal valorCouvertPorPessoa = couvert.aplicavel() ? couvert.valorPorPessoa() : null;
-        Integer couvertPessoas = couvert.aplicavel() ? couvert.pessoasCobradas() : null;
+        BigDecimal valorCouvertPorPessoa = couvert.aplicavel() ? couvert.valorUnitario() : null;
+        CouvertArtisticoModo couvertModo = couvert.aplicavel() ? couvert.modo() : null;
+        Integer couvertPessoas = couvert.aplicavel() && couvert.modo() == CouvertArtisticoModo.POR_PESSOA
+                ? couvert.pessoasCobradas()
+                : null;
         BigDecimal taxaGarcomPct = taxaGarcom.aplicavel() ? taxaGarcom.percentualAplicado() : null;
 
         Long mesaId = p.getMesa() != null ? p.getMesa().getId() : null;
@@ -550,6 +554,7 @@ public class PedidosPersistenceAdapter implements PedidosPersistencePort {
                 subtotal,
                 valorCouvert,
                 valorCouvertPorPessoa,
+                couvertModo,
                 couvertPessoas,
                 valorTaxaGarcom,
                 taxaGarcomPct,
