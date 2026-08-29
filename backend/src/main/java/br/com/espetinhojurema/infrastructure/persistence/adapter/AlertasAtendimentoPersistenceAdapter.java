@@ -79,4 +79,12 @@ public class AlertasAtendimentoPersistenceAdapter implements AlertasAtendimentoP
                         pedidoId, TipoAlertaAtendimento.COMANDA_ENVIADA, anteriorA)
                 .map(AlertaAtendimentoEntity::getItemIdMax);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Long> buscarItemIdMaxDaUltimaComandaEnviada(Long pedidoId) {
+        return repository
+                .findFirstByPedidoIdAndTipoOrderByCriadoEmDesc(pedidoId, TipoAlertaAtendimento.COMANDA_ENVIADA)
+                .map(AlertaAtendimentoEntity::getItemIdMax);
+    }
 }

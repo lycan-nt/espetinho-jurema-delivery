@@ -11,6 +11,7 @@ import br.com.espetinhojurema.domain.model.MesaStatus;
 import br.com.espetinhojurema.domain.model.PedidoStatus;
 import br.com.espetinhojurema.domain.model.PedidoTipo;
 import br.com.espetinhojurema.domain.model.TipoAlertaAtendimento;
+import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +54,10 @@ public class SolicitacaoFechamentoComandaOperacaoService {
         }
         if (pedido.status() == PedidoStatus.PAGO || pedido.status() == PedidoStatus.CANCELADO) {
             throw new BusinessException("Pedido já encerrado");
+        }
+        boolean temItemAtivo = pedido.itens().stream().anyMatch(i -> !i.cancelado());
+        if (!temItemAtivo && (pedido.total() == null || pedido.total().compareTo(BigDecimal.ZERO) <= 0)) {
+            throw new BusinessException("Adicione itens ao pedido antes de solicitar fechamento da comanda");
         }
         Integer mesaNumero = pedido.mesaNumero();
         if (mesaNumero == null) {

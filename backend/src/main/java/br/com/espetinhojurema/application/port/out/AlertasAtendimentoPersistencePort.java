@@ -29,4 +29,7 @@ public interface AlertasAtendimentoPersistencePort {
      * <em>antes</em> de {@code anteriorA}. Usado para determinar quais itens são novos na próxima comanda.
      */
     Optional<Long> buscarItemIdMaxDaComandaAnterior(Long pedidoId, Instant anteriorA);
+
+    /** {@code itemIdMax} do último alerta {@code COMANDA_ENVIADA} do pedido (independente de reconhecimento). */
+    Optional<Long> buscarItemIdMaxDaUltimaComandaEnviada(Long pedidoId);
 }

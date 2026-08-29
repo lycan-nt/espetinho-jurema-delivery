@@ -6,7 +6,7 @@ import { ApiBackendService } from '../core/api-backend.service';
 import { AuthService } from '../core/auth.service';
 import { AlertaAtendimentoWsPayload } from '../models/api.models';
 
-type StatusImpressao = 'imprimindo' | 'impresso' | 'aguardando-retry' | 'erro';
+type StatusImpressao = 'imprimindo' | 'impresso' | 'sem-itens' | 'aguardando-retry' | 'erro';
 
 const MAX_TENTATIVAS = 3;
 const DELAY_RETRY_S = 5;
@@ -74,7 +74,7 @@ export class AlertasAtendimentoPanelComponent implements OnInit, OnDestroy {
     this.sub.add(
       this.alertas.alarmeCicloCompleto$.subscribe(() => {
         for (const a of [...this.alertas.fila()]) {
-          if (!this.ehSolicitaFechamento(a) && this.statusDe(a.alertaId) === 'impresso') {
+          if (!this.ehSolicitaFechamento(a) && (this.statusDe(a.alertaId) === 'impresso' || this.statusDe(a.alertaId) === 'sem-itens')) {
             this.fechar(a.alertaId);
           }
         }
@@ -92,10 +92,7 @@ export class AlertasAtendimentoPanelComponent implements OnInit, OnDestroy {
     this.alertas.inicioProcessar(alertaId);
     this.api.reconhecerAlertaAtendimento(alertaId).subscribe({
       next: (r) => {
-        const texto = r.textoComanda?.trim() ?? '';
-        if (texto && !r.impressoServidor) {
-          imprimirTextoTerminalBrowser(texto, 'Comanda cozinha');
-        }
+        this.tratarResultadoImpressao(alertaId, r.textoComanda?.trim() ?? '', r.impressoServidor);
         this.alertas.inicioProcessar(null);
         this.alertas.ignorar(alertaId);
       },
@@ -134,11 +131,7 @@ export class AlertasAtendimentoPanelComponent implements OnInit, OnDestroy {
 
     this.api.reconhecerAlertaAtendimento(alertaId).subscribe({
       next: (r) => {
-        const texto = r.textoComanda?.trim() ?? '';
-        if (texto && !r.impressoServidor) {
-          imprimirTextoTerminalBrowser(texto, 'Comanda cozinha');
-        }
-        this.setEstado(alertaId, { status: 'impresso', tentativas: tentativaAtual, contagem: null });
+        this.tratarResultadoImpressao(alertaId, r.textoComanda?.trim() ?? '', r.impressoServidor, tentativaAtual);
         this.agendarFecharSeCicloDoAlarmeJaTerminou(alertaId);
       },
       error: () => {
@@ -191,6 +184,26 @@ export class AlertasAtendimentoPanelComponent implements OnInit, OnDestroy {
   private limparTodosTimers(): void {
     this.timers.forEach((t) => clearInterval(t));
     this.timers.clear();
+  }
+
+  private tratarResultadoImpressao(
+    alertaId: string,
+    texto: string,
+    impressoServidor?: boolean,
+    tentativas = 1,
+  ): void {
+    if (!this.textoComandaImprimivel(texto)) {
+      this.setEstado(alertaId, { status: 'sem-itens', tentativas, contagem: null });
+      return;
+    }
+    if (!impressoServidor) {
+      imprimirTextoTerminalBrowser(texto, 'Comanda cozinha');
+    }
+    this.setEstado(alertaId, { status: 'impresso', tentativas, contagem: null });
+  }
+
+  private textoComandaImprimivel(texto: string): boolean {
+    return texto.length > 0 && !texto.includes('(sem itens)');
   }
 
   private setEstado(alertaId: string, estado: EstadoAlerta): void {

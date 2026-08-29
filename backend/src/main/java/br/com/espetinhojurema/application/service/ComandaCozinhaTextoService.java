@@ -60,6 +60,26 @@ public class ComandaCozinhaTextoService {
     }
 
     /**
+     * {@code true} quando a comanda teria itens ou valores (evita ticket com {@code (sem itens)}).
+     */
+    public boolean temItensParaImprimir(PedidoDetalheView p, boolean incluirTotal, Long itemIdCorte) {
+        for (ItemPedidoView item : p.itens()) {
+            if (item.cancelado()) {
+                continue;
+            }
+            if (itemIdCorte != null && item.id() <= itemIdCorte) {
+                continue;
+            }
+            return true;
+        }
+        if (incluirTotal) {
+            BigDecimal total = p.total() != null ? p.total() : BigDecimal.ZERO;
+            return total.compareTo(BigDecimal.ZERO) > 0;
+        }
+        return false;
+    }
+
+    /**
      * @param incluirTotal  {@code true} para solicitação de fechamento (imprime o total).
      * @param itemIdCorte   Quando não-nulo, imprime apenas itens com {@code id > itemIdCorte} (itens novos).
      *                      {@code null} imprime todos os itens ativos.

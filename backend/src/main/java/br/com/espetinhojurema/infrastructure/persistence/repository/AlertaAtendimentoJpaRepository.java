@@ -14,4 +14,7 @@ public interface AlertaAtendimentoJpaRepository extends JpaRepository<AlertaAten
     /** Último alerta COMANDA_ENVIADA do pedido criado ANTES de {@code anteriorA} — para obter o corte de itens. */
     Optional<AlertaAtendimentoEntity> findFirstByPedidoIdAndTipoAndCriadoEmBeforeOrderByCriadoEmDesc(
             Long pedidoId, TipoAlertaAtendimento tipo, Instant anteriorA);
+
+    Optional<AlertaAtendimentoEntity> findFirstByPedidoIdAndTipoOrderByCriadoEmDesc(
+            Long pedidoId, TipoAlertaAtendimento tipo);
 }

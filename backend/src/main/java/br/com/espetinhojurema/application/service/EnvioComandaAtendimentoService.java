@@ -47,6 +47,15 @@ public class EnvioComandaAtendimentoService {
         if (!temItemAtivo) {
             throw new BusinessException("Adicione ao menos um item antes de enviar a comanda");
         }
+        Long itemIdCorteAnterior = alertasAtendimentoPersistencePort
+                .buscarItemIdMaxDaUltimaComandaEnviada(pedidoId)
+                .orElse(null);
+        boolean temItensNovos = pedido.itens().stream()
+                .anyMatch(i -> !i.cancelado() && (itemIdCorteAnterior == null || i.id() > itemIdCorteAnterior));
+        if (!temItensNovos) {
+            throw new BusinessException(
+                    "Não há itens novos para enviar à cozinha. Adicione itens antes de enviar a comanda.");
+        }
         if (pedido.mesaNumero() == null) {
             throw new BusinessException("Pedido sem mesa associada");
         }

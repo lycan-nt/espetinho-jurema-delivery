@@ -59,8 +59,23 @@ public class AtendimentoAlertaOperacaoService {
                     .orElse(null);
         }
 
+        boolean jaReconhecido = !registro.pendente();
+        if (!comandaCozinhaTextoService.temItensParaImprimir(pedido, ehFechamento, itemIdCorte)) {
+            if (!jaReconhecido) {
+                alertasAtendimentoPersistencePort.marcarReconhecido(alertaId, loginUsuario);
+                if (ehFechamento
+                        && pedido.mesaId() != null
+                        && pedido.status() != PedidoStatus.PAGO
+                        && pedido.status() != PedidoStatus.CANCELADO) {
+                    mesasPersistencePort.atualizarStatus(pedido.mesaId(), MesaStatus.OCUPADA);
+                    pedidoEventPublisherPort.notificarMudancaPedido(registro.pedidoId());
+                }
+            }
+            return new ReconhecerAlertaResult("", jaReconhecido, false);
+        }
+
         String texto = comandaCozinhaTextoService.gerar(pedido, ehFechamento, itemIdCorte);
-        if (!registro.pendente()) {
+        if (jaReconhecido) {
             boolean impressoServidor = tentarImprimirServidor(texto);
             return new ReconhecerAlertaResult(texto, true, impressoServidor);
         }

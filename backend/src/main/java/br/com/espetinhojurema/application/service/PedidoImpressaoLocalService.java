@@ -49,6 +49,9 @@ public class PedidoImpressaoLocalService {
         var pedido = pedidosPersistencePort
                 .buscarDetalhe(pedidoId)
                 .orElseThrow(() -> new BusinessException("Pedido não encontrado"));
+        if (!comandaCozinhaTextoService.temItensParaImprimir(pedido, false, null)) {
+            throw new BusinessException("Pedido sem itens para imprimir comanda de cozinha");
+        }
         return comandaCozinhaTextoService.gerar(pedido, false, null);
     }
 

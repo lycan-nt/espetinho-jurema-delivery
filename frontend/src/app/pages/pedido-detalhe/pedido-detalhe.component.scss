@@ -743,6 +743,14 @@
   line-height: 1.38;
 }
 
+.aviso-comanda-vazia {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(255, 180, 50, 0.12);
+  color: var(--text);
+}
+
 @media (max-width: 640px) {
   .add-pedido-mobile-bar--cta {
     position: fixed;
@@ -1128,4 +1136,62 @@
   gap: 0.5rem;
   flex-wrap: wrap;
   margin-top: 0.35rem;
+}
+
+.modal-sair-vazia-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.modal-sair-vazia {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, calc(100vw - 2rem));
+  max-height: min(90vh, 520px);
+  overflow-y: auto;
+  z-index: 111;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.15rem 1.05rem;
+  padding-bottom: max(1.15rem, calc(1rem + env(safe-area-inset-bottom, 0px)));
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+.modal-sair-vazia h3 {
+  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+}
+
+.modal-sair-vazia-texto {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.modal-sair-vazia-texto strong {
+  color: var(--text);
+}
+
+.modal-sair-vazia-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+  .modal-sair-vazia-acoes {
+    flex-direction: column-reverse;
+
+    .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 }

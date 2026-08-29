@@ -133,6 +133,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
   carregandoPagamento = false;
   carregandoEnviarComanda = false;
   carregandoImprimirComanda = false;
+  carregandoVoltar = false;
 
   mesasParaTransferir: MesaComOcupacao[] = [];
   mesaDestinoTransferirId: number | null = null;
@@ -145,6 +146,9 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
 
   /** Modal: cancelar só parte da quantidade quando {@link ItemPedido.quantidade} > 1. */
   modalCancelarItem: ItemPedido | null = null;
+
+  /** Modal: sair descartando comanda vazia (sem itens e total zero). */
+  modalSairComandaVaziaAberto = false;
   qtdParaCancelarItem = 1;
 
   /** Painel lateral com ações (cozinha, conta, impressão, transferência). */
@@ -847,15 +851,40 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Pagamentos e fechamento no caixa apenas no perfil atendimento (PC). */
+  /** Pagamentos e fechamento no caixa — pedidos de mesa usam a tela Mesas (Quitar conta). */
   podeVerPagamentoCaixa(): boolean {
+    if (this.pedido?.tipo === 'MESA') {
+      return false;
+    }
     return this.auth.usuario()?.perfil === 'ATENDIMENTO';
   }
 
-  /** Comanda térmica completa (reimpressão) — atendimento, pedido de mesa. */
+  /** Comanda térmica completa (reimpressão) — atendimento, pedido de mesa com itens. */
   podeImprimirComandaCozinha(): boolean {
     const p = this.pedido;
-    return !!p && this.auth.usuario()?.perfil === 'ATENDIMENTO' && p.tipo === 'MESA';
+    return (
+      !!p &&
+      this.auth.usuario()?.perfil === 'ATENDIMENTO' &&
+      p.tipo === 'MESA' &&
+      this.itensAtivosNoPedido(p).length > 0
+    );
+  }
+
+  /** Pedido de mesa aberto sem nenhum item ativo lançado. */
+  pedidoMesaSemItens(): boolean {
+    const p = this.pedido;
+    return (
+      !!p?.mesaId &&
+      p.status !== 'PAGO' &&
+      p.status !== 'CANCELADO' &&
+      !this.itensAtivosNoPedido(p).length
+    );
+  }
+
+  /** Comanda sem itens e sem valor — pode ser cancelada ao sair (libera a mesa). */
+  comandaVaziaDescartavel(): boolean {
+    const p = this.pedido;
+    return this.pedidoMesaSemItens() && (p?.total ?? 0) <= 0.005;
   }
 
   podeEnviarComanda(): boolean {
@@ -873,7 +902,7 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
     if (!this.itensAtivosNoPedido(p).length) {
       return false;
     }
-    return u.perfil === 'GARCOM' || u.perfil === 'CHURRASQUEIRO';
+    return u.perfil === 'ATENDIMENTO' || u.perfil === 'GARCOM' || u.perfil === 'CHURRASQUEIRO';
   }
 
   enviarComanda(): void {
@@ -938,6 +967,45 @@ export class PedidoDetalheComponent implements OnInit, OnDestroy {
 
   voltar(): void {
     this.panelAcoesAberto = false;
+    if (this.comandaVaziaDescartavel()) {
+      this.modalSairComandaVaziaAberto = true;
+      return;
+    }
+    this.navegarVoltar();
+  }
+
+  fecharModalSairComandaVazia(): void {
+    if (this.carregandoVoltar) {
+      return;
+    }
+    this.modalSairComandaVaziaAberto = false;
+  }
+
+  confirmarSairComandaVazia(): void {
+    this.descartarComandaVaziaEVoltar();
+  }
+
+  private descartarComandaVaziaEVoltar(): void {
+    const p = this.pedido;
+    if (!p || this.carregandoVoltar) {
+      return;
+    }
+    this.carregandoVoltar = true;
+    this.erroItem = null;
+    this.api.patchPedidoStatus(p.id, 'CANCELADO').subscribe({
+      next: () => {
+        this.carregandoVoltar = false;
+        this.modalSairComandaVaziaAberto = false;
+        this.navegarVoltar();
+      },
+      error: (e) => {
+        this.carregandoVoltar = false;
+        this.erroItem = e?.error?.erro ?? 'Não foi possível descartar a comanda vazia.';
+      },
+    });
+  }
+
+  private navegarVoltar(): void {
     if (this.pedido?.mesaId) {
       void this.router.navigate(['/mesas']);
     } else {

@@ -1,5 +1,7 @@
 <div class="pedido-topbar">
-  <button type="button" class="btn btn-ghost back" (click)="voltar()">{{ tituloVoltar() }}</button>
+  <button type="button" class="btn btn-ghost back" [disabled]="carregandoVoltar" (click)="voltar()">
+    {{ carregandoVoltar ? 'Saindo…' : tituloVoltar() }}
+  </button>
   @if (pedido) {
     <button type="button" class="btn btn-acoes-pedido" (click)="abrirPanelAcoes()">Ações do pedido</button>
   }
@@ -18,6 +20,17 @@
       {{ (pedido.restante ?? pedido.total) | number : '1.2-2' }}
     }
   </p>
+
+  @if (comandaVaziaDescartavel()) {
+    <p class="hint-ec-add-bar aviso-comanda-vazia">
+      Nenhum item lançado. Adicione produtos para enviar a comanda à cozinha. Ao sair, a comanda vazia será descartada
+      e a mesa voltará a ficar livre.
+    </p>
+  } @else if (pedidoMesaSemItens()) {
+    <p class="hint-ec-add-bar aviso-comanda-vazia">
+      Nenhum item lançado ainda. Adicione produtos para enviar a comanda à cozinha.
+    </p>
+  }
 
   @if (pedido.status !== 'PAGO' && pedido.status !== 'CANCELADO') {
     <div class="add-box add-box--destaque">
@@ -396,22 +409,24 @@
               </button>
             </div>
           </div>
-          <div class="acoes-grupo">
-            <span class="acoes-label">Conta</span>
-            <div class="acoes-botoes acoes-botoes--conta">
-              @if (pedido.total === 0 && pedido.status !== 'PAGO' && pedido.status !== 'CANCELADO') {
-                <button type="button" class="btn btn-primary acoes-chip" (click)="mudarStatus('PAGO')">Encerrar sem valor</button>
-              }
-              <button
-                type="button"
-                class="btn btn-outline-warn acoes-chip"
-                (click)="mudarStatus('CANCELADO')"
-                [disabled]="pedido.status === 'PAGO' || pedido.status === 'CANCELADO'"
-              >
-                Cancelar pedido
-              </button>
+          @if (podeVerPagamentoCaixa()) {
+            <div class="acoes-grupo">
+              <span class="acoes-label">Conta</span>
+              <div class="acoes-botoes acoes-botoes--conta">
+                @if (pedido.total === 0 && pedido.status !== 'PAGO' && pedido.status !== 'CANCELADO') {
+                  <button type="button" class="btn btn-primary acoes-chip" (click)="mudarStatus('PAGO')">Encerrar sem valor</button>
+                }
+                <button
+                  type="button"
+                  class="btn btn-outline-warn acoes-chip"
+                  (click)="mudarStatus('CANCELADO')"
+                  [disabled]="pedido.status === 'PAGO' || pedido.status === 'CANCELADO'"
+                >
+                  Cancelar pedido
+                </button>
+              </div>
             </div>
-          </div>
+          }
           <div class="acoes-grupo acoes-grupo--imprimir">
             <span class="acoes-label">Imprimir</span>
             <div class="acoes-botoes">
@@ -526,6 +541,44 @@
           (click)="confirmarCancelamentoQuantidade()"
         >
           {{ cancelandoItemId !== null ? 'Cancelando…' : 'Confirmar' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (modalSairComandaVaziaAberto) {
+    <div class="modal-sair-vazia-overlay" (click)="fecharModalSairComandaVazia()"></div>
+    <div
+      class="modal-sair-vazia"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-sair-vazia-titulo"
+      (click)="$event.stopPropagation()"
+    >
+      <h3 id="modal-sair-vazia-titulo">Sair sem lançar itens?</h3>
+      <p class="modal-sair-vazia-texto">
+        Nenhum item foi adicionado a esta comanda. Ao confirmar, a comanda vazia será descartada e a
+        @if (pedido.mesaNumero) {
+          <strong>mesa {{ pedido.mesaNumero }}</strong>
+        } @else {
+          mesa
+        }
+        voltará a ficar livre.
+      </p>
+      @if (erroItem) {
+        <p class="err">{{ erroItem }}</p>
+      }
+      <div class="modal-sair-vazia-acoes">
+        <button type="button" class="btn btn-ghost" [disabled]="carregandoVoltar" (click)="fecharModalSairComandaVazia()">
+          Continuar na comanda
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="carregandoVoltar"
+          (click)="confirmarSairComandaVazia()"
+        >
+          {{ carregandoVoltar ? 'Saindo…' : 'Sair e descartar' }}
         </button>
       </div>
     </div>

@@ -114,7 +114,7 @@ public class PedidoRestController {
     }
 
     @PostMapping("/{id}/comanda/enviar")
-    @PreAuthorize("hasAnyRole('GARCOM', 'CHURRASQUEIRO')")
+    @PreAuthorize("hasAnyRole('ATENDIMENTO', 'GARCOM', 'CHURRASQUEIRO')")
     public PedidoDetalheView enviarComanda(@PathVariable Long id) {
         return envioComandaAtendimentoService.enviarComanda(id);
     }
